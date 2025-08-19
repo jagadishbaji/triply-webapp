@@ -55,7 +55,7 @@ const menuConfig = {
     },
     {
       title: "Trip Types",
-      url: "/trip-types",
+      url: "/tripTypes",
       icon: IconRoute,
       roles: ["admin"],
     },
