@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import type { Icon } from "@tabler/icons-react"
 import {
   SidebarGroup,
@@ -26,11 +27,18 @@ export function NavMain({
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
+                asChild
                 tooltip={item.title}
-                className={item.isActive ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}
+                className={
+                  item.isActive
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                    : ""
+                }
               >
-                {item.icon && <item.icon />}
-                <span>{item.title}</span>
+                <Link href={item.url}>
+                  {item.icon && <item.icon />}
+                  <span>{item.title}</span>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}

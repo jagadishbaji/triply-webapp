@@ -5,6 +5,7 @@ import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { DataTable } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
 import { SiteHeader } from "@/components/site-header"
+import { PageLoader } from "@/components/ui/loader"
 import {
   SidebarInset,
   SidebarProvider,
@@ -19,13 +20,15 @@ export default function Page() {
   const router = useRouter()
 const [loading, setLoading] = useState(true)
   const [data, setData] = useState<any[]>([])
+  
   useEffect(() => {
     const token = localStorage.getItem("accessToken")
     if (!token) {
       router.push("/login")
     }
+    setLoading(false);
   }, [router])
-
+  if (loading) return <PageLoader />
   return (
     <SidebarProvider
       style={

@@ -11,10 +11,10 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { columns } from "./columns"
-import { DataTable } from "./data-table"
+import { DataTable } from "@/components/ui/data-table"
 import { Agent, getAgents, createAgent, updateAgent, deleteAgent } from "@/services/agentsService"
 import { toast, Toaster, ToastT } from "sonner"
-
+import { PageLoader } from "@/components/ui/loader"
 import {
   Dialog,
   DialogContent,
@@ -39,8 +39,6 @@ export default function AgentsPage() {
   const router = useRouter()
   const [agents, setAgents] = useState<Agent[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
 
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -57,7 +55,7 @@ export default function AgentsPage() {
       .then(setAgents)
       .catch((err) => {
         console.error(err)
-        setError("Failed to fetch agents.")
+        toast.success("Failed to fetch agents.")
       })
       .finally(() => setLoading(false))
   }, [])
@@ -68,13 +66,13 @@ export default function AgentsPage() {
       const newAgent = await createAgent(data)
       setAgents([...agents, newAgent])
       //Toaster({succ})
-      setSuccess("Agent added successfully!")
-      setError(null)
+      toast.success("Agent added successfully!")   
+      
       setShowAddDialog(false)
       reset()
     } catch {
-      setError("Failed to add agent.")
-      setSuccess(null)
+      toast.error("Failed to add agent.")  
+      
     }
   }
 
@@ -84,14 +82,14 @@ export default function AgentsPage() {
     try {
       const updated = await updateAgent(selectedAgent.id, data)
       setAgents(agents.map(a => (a.id === selectedAgent.id ? updated : a)))
-      setSuccess("Agent updated successfully!")
-      setError(null)
+      toast.success("Agent updated successfully!")
+      
       setShowEditDialog(false)
       reset()
       setSelectedAgent(null)
     } catch {
-      setError("Failed to update agent.")
-      setSuccess(null)
+      toast.error("Failed to update agent.")
+     
     }
   }
 
@@ -101,13 +99,13 @@ export default function AgentsPage() {
     try {
       await deleteAgent(selectedAgent.id)
       setAgents(agents.filter(a => a.id !== selectedAgent.id))
-      setSuccess("Agent deleted successfully!")
-      setError(null)
+      toast.success("Agent deleted successfully!")
+      
       setShowDeleteDialog(false)
       setSelectedAgent(null)
     } catch {
-      setError("Failed to delete agent.")
-      setSuccess(null)
+      toast.error("Failed to delete agent.")  
+      
     }
   }
 
@@ -128,9 +126,12 @@ export default function AgentsPage() {
     setShowDeleteDialog(true)
   }
 
-  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>
+  if (loading) return <PageLoader />
 
   return (
+    <>
+    {/* Toast container - must be inside JSX tree */}
+    <Toaster richColors position="top-right" />
     <SidebarProvider
       style={{
         "--sidebar-width": "calc(var(--spacing) * 72)",
@@ -146,19 +147,7 @@ export default function AgentsPage() {
     <Button onClick={() => {reset();   setShowAddDialog(true)}}>Add Agent</Button>
   </div>
 
-  {/* Alerts */}
-  {error && (
-    <Alert variant="destructive" className="mb-4">
-      <AlertTitle>Error</AlertTitle>
-      <AlertDescription>{error}</AlertDescription>
-    </Alert>
-  )}
-  {success && (
-    <Alert className="mb-4">
-      <AlertTitle>Success</AlertTitle>
-      <AlertDescription>{success}</AlertDescription>
-    </Alert>
-  )}
+  
 
           {/* DataTable */}
           <DataTable
@@ -255,5 +244,6 @@ export default function AgentsPage() {
         </div>
       </SidebarInset>
     </SidebarProvider>
+    </>
   )
 }

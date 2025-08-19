@@ -25,7 +25,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-
+import Link from "next/link"
 // ✅ Menu config with role restrictions
 const menuConfig = {
   navMain: [
@@ -49,7 +49,7 @@ const menuConfig = {
     },
     {
       title: "Vehicle Types",
-      url: "/vehicle-types",
+      url: "/vehicleTypes",
       icon: IconCarCrane,
       roles: ["admin"],
     },
@@ -108,10 +108,10 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
-              <a href="/dashboard">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">JP Tech.</span>
-              </a>
+               <Link href="/dashboard">
+    <IconInnerShadowTop className="!size-5" />
+    <span className="text-base font-semibold">JP Tech.</span>
+  </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
