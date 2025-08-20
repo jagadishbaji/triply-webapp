@@ -43,7 +43,7 @@ const menuConfig = {
     },
     {
       title: "Agent Vehicles",
-      url: "/agent-vehicles",
+      url: "/agentVehicles",
       icon: IconCar,
       roles: ["admin"],
     },
