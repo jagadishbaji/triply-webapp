@@ -15,6 +15,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  IconChevronDown,
+  IconChevronLeft,
+  IconChevronRight,
+  IconChevronsLeft,
+  IconChevronsRight,
+  IconCircleCheckFilled,
+  IconDotsVertical,
+  IconGripVertical,
+  IconLayoutColumns,
+  IconLoader,
+  IconPlus,
+  IconTrendingUp,
+  IconCircleDashed,
+  IconCircleDashedX
+} from "@tabler/icons-react"
+import { Badge } from "@/components/ui/badge"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -59,11 +76,39 @@ export function DataTable<TData, TValue>({
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
               >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
+                {row.getVisibleCells().map((cell) => {
+                  const value = cell.getValue()
+
+                  // 🔥 If cell value is boolean, show badge
+                  if (typeof value === "boolean") {
+                    return (
+                      <TableCell key={cell.id}>
+                        {value ? (
+                          <Badge variant="outline" className="text-muted-foreground px-1.5"><IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
+                            Active
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="text-red-500 border-red-500"
+                          ><IconCircleDashedX className="fill-red-500 dark:fill-red-400"/>
+                            In-Active
+                          </Badge>
+                        )}
+                      </TableCell>
+                    )
+                  }
+
+                  // Otherwise render normally
+                  return (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  )
+                })}
               </TableRow>
             ))
           ) : (

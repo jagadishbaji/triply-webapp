@@ -13,3 +13,9 @@ export async function register(userData: any) {
     body: JSON.stringify(userData),
   }, false); // no token required
 }
+export async function forgotPassword(email: string) {
+  return apiFetch("/api/Auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({email}),
+  }, false); // no token required
+}

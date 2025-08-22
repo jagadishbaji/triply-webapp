@@ -1,6 +1,7 @@
 // services/agentService.ts
 import { apiFetch } from "@/lib/api"
 import { getCookie } from "cookies-next";
+import { email } from "zod";
 
 export interface Agent {
   id: string;
@@ -10,7 +11,11 @@ export interface Agent {
   address: string;
   licenseNumber: string;
   createdAt: string;
+  isActive:boolean; 
+  password:string;
+  
 }
+
 
 // ✅ Get all agents
 export async function getAgents(): Promise<Agent[]> {
@@ -28,12 +33,26 @@ export async function getAgent(id: string): Promise<Agent> {
 
 // ✅ Create agent
 export async function createAgent(agent: Omit<Agent, "id" | "createdAt">) {
-  return apiFetch<Agent>("/api/agents", {
+  return apiFetch<Agent>("/api/auth/agentSignup", {
     method: "POST",
-    body: JSON.stringify(agent),
-    headers: {
-      Authorization: `Bearer ${getCookie("accessToken")}`, // <- is token passed here?
-    }
+    body: JSON.stringify({
+       email: agent.email,
+          password: agent.password,
+          role: "agent",
+          agents: {
+            name: agent.name,
+            email: agent.email, // duplicate to match DTO
+            phoneNumber: agent.phoneNumber,
+            address: agent.address,
+            licenseNumber: agent.licenseNumber,
+            isActive: agent.isActive,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+    })
+    // headers: {
+    //   Authorization: `Bearer ${getCookie("accessToken")}`, // <- is token passed here?
+    // }
   })
 }
 
