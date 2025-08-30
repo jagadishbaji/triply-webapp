@@ -73,3 +73,20 @@ export async function deleteAgent(id: string) {
       Authorization: `Bearer ${getCookie("accessToken")}`, // <- is token passed here?
     }})
 }
+// ✅ Get all inactive agents
+export async function getInActiveAgents(): Promise<Agent[]> {
+  return apiFetch<Agent[]>("/api/agents/inactive", { method: "GET", headers: {
+      Authorization: `Bearer ${getCookie("accessToken")}`, // <- is token passed here?
+    },})
+}
+
+// ✅ Update agent status
+export async function updateAgentStatus(id: string, status: boolean) {
+  return apiFetch<Agent>(`/api/agents/status/${id}`, {
+    method: "POST",
+    body: JSON.stringify(status),
+    headers: {
+      Authorization: `Bearer ${getCookie("accessToken")}`, // <- is token passed here?
+    }
+  })
+}

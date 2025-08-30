@@ -10,6 +10,7 @@ import {
   IconRoute,
   IconCalendarEvent,
   IconDashboard,
+  IconUserCheck
 } from "@tabler/icons-react"
 import { usePathname } from "next/navigation"
 
@@ -39,6 +40,12 @@ const menuConfig = {
       title: "Agents",
       url: "/agents",
       icon: IconUsers,
+      roles: ["admin"], // only admin
+    },
+    {
+      title: "Approve Agents",
+      url: "/approveAgents",
+      icon: IconUserCheck,
       roles: ["admin"], // only admin
     },
     {

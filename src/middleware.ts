@@ -6,18 +6,17 @@ export function middleware(req: NextRequest) {
   const role = req.cookies.get("role")?.value
   const { pathname } = req.nextUrl
 
-  // 🔹 If not logged in and not already on /login → go to login
-  if (!token && pathname !== "/login") {
+  // 🔹 Allow home, login, signup without login
+  if (!token && pathname !== "/" && pathname !== "/login" && pathname !== "/agentSignup") {
     return NextResponse.redirect(new URL("/login", req.url))
   }
 
-  // 🔹 If logged in and trying to access /login → redirect to dashboard
-  if (token && pathname === "/login") {
+  // 🔹 If logged in and trying to access /login or /agentsSignup → redirect to dashboard
+  if (token && (pathname === "/login" || pathname === "/agentsSignup")) {
     return NextResponse.redirect(new URL("/dashboard", req.url))
   }
 
   // 🔹 Role-based restriction: block "user" from accessing /agents
-  // Only redirect if token exists and role is explicitly "user"
   if (token && role === "user" && pathname.startsWith("/agents")) {
     return NextResponse.redirect(new URL("/dashboard", req.url))
   }
