@@ -18,7 +18,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-import { Agent, getAgents, updateAgentStatus,getInActiveAgents } from "@/services/agentsService";
+import { Agent, getAgents, updateAgentStatus,getInActiveAgents } from "@/services/admin/agentsService";
 
 // Table columns
 // const columns = [

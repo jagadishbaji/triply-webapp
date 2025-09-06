@@ -37,8 +37,8 @@ import {
   addAgentVehicle,      // (payload) => Promise<Vehicle>
   updateAgentVehicle,   // (id, payload) => Promise<Vehicle>
   deleteAgentVehicle,   // (id) => Promise<void>
-} from "@/services/agentVehiclesService"
-import { getVehicleTypes } from "@/services/vehicleTypesService"
+} from "@/services/admin/agentVehiclesService"
+import { getVehicleTypes } from "@/services/admin/vehicleTypesService"
 
 // ------- Types -------
 type Agent = { id: string; name: string }

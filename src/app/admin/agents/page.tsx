@@ -12,7 +12,7 @@ import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { columns } from "./columns"
 import { DataTable } from "@/components/ui/data-table"
-import { Agent, getAgents, createAgent, updateAgent, deleteAgent } from "@/services/agentsService"
+import { Agent, getAgents, createAgent, updateAgent, deleteAgent } from "@/services/admin/agentsService"
 import { toast, Toaster, ToastT } from "sonner"
 import { PageLoader } from "@/components/ui/loader"
 import {

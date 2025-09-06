@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { createAgent } from "@/services/agentsService";
+import { createAgent } from "@/services/admin/agentsService";
 import {
   Dialog,
   DialogContent,

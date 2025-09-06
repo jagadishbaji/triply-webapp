@@ -17,39 +17,45 @@ import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { DataTable } from "@/components/ui/data-table"
 
-import { gettripTypes,addtripType,updatetripType,deletetripType,tripType } from "@/services/tripTypesService"
-type TripTypes = {
+import {vehicleType,
+  getVehicleTypes,
+  addVehicleType,
+  updateVehicleType,
+  deleteVehicleType,
+} from "@/services/admin/vehicleTypesService"
+
+type VehicleType = {
   id: string
   name: string
 }
 // ✅ Zod schema
-const tripTypeSchema = z.object({
+const vehicleTypeSchema = z.object({
   name: z.string().min(1, "Name is required"),
 })
 
-type tripTypeForm = z.infer<typeof tripTypeSchema>
+type vehicleTypeFporm = z.infer<typeof vehicleTypeSchema>
 
 
-export default function TripTypesPage() {
-  const [tripTypes, setTripTypes] = useState<TripTypes[]>([])
+export default function VehicleTypesPage() {
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([])
   const [loading, setLoading] = useState(true)
 
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
-  const [selected, setSelected] = useState<TripTypes | null>(null)
+  const [selected, setSelected] = useState<VehicleType | null>(null)
   const [name, setName] = useState("")
- const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<tripTypeForm>({
-    resolver: zodResolver(tripTypeSchema),})
+ const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<vehicleTypeFporm>({
+    resolver: zodResolver(vehicleTypeSchema),})
   // ✅ Load data
   useEffect(() => {
     async function fetchData() {
       try {
-        const data = await gettripTypes()
-        setTripTypes(data)
+        const data = await getVehicleTypes()
+        setVehicleTypes(data)
       } catch {
-        toast.error("Failed to load trip types")
+        toast.error("Failed to load vehicle types")
       } finally {
         setLoading(false)
       }
@@ -58,30 +64,30 @@ export default function TripTypesPage() {
   }, [])
 
   // ✅ Add
-  const onAdd = async (data: tripTypeForm) => {
+  const onAdd = async (data: vehicleTypeFporm) => {
     try {
-      const newType = await addtripType(data)
-      setTripTypes([...tripTypes, newType])
-      toast.success("Trip type added successfully")
+      const newType = await addVehicleType(data)
+      setVehicleTypes([...vehicleTypes, newType])
+      toast.success("Vehicle type added successfully")
       setShowAddDialog(false)
     reset()
     } catch {
-      toast.error("Failed to add trip type")
+      toast.error("Failed to add vehicle type")
     }
   }
 
   // ✅ Edit
-  const onEdit = async (data: tripTypeForm) => {
+  const onEdit = async (data: vehicleTypeFporm) => {
     if (!selected) return
     try {
-      const updated = await updatetripType(selected.id, data)
-      setTripTypes(tripTypes.map(v => (v.id === selected.id ? updated : v)))
-      toast.success("Trip type updated successfully")
+      const updated = await updateVehicleType(selected.id, data)
+      setVehicleTypes(vehicleTypes.map(v => (v.id === selected.id ? updated : v)))
+      toast.success("Vehicle type updated successfully")
       setShowEditDialog(false)
       setSelected(null)
       reset()
     } catch {
-      toast.error("Failed to update trip type")
+      toast.error("Failed to update vehicle type")
     }
   }
 
@@ -89,25 +95,25 @@ export default function TripTypesPage() {
   const onDelete = async () => {
     if (!selected) return
     try {
-      await deletetripType(selected.id)
-      setTripTypes(tripTypes.filter(v => v.id !== selected.id))
-      toast.success("Trip type deleted successfully")
+      await deleteVehicleType(selected.id)
+      setVehicleTypes(vehicleTypes.filter(v => v.id !== selected.id))
+      toast.success("Vehicle type deleted successfully")
       setShowDeleteDialog(false)
       setSelected(null)
     } catch {
-      toast.error("Failed to delete trip type")
+      toast.error("Failed to delete vehicle type")
     }
   }
     // ✅ Open Edit Dialog
-    const openEditDialog = (tripType: tripType) => {
-      setSelected(tripType)
-      setValue("name", tripType.name)    
+    const openEditDialog = (vehicleType: vehicleType) => {
+      setSelected(vehicleType)
+      setValue("name", vehicleType.name)    
       setShowEditDialog(true)
     }
   
     // ✅ Open Delete Dialog
-    const openDeleteDialog = (tripType: tripType) => {
-      setSelected(tripType)
+    const openDeleteDialog = (vehicleType: vehicleType) => {
+      setSelected(vehicleType)
       setShowDeleteDialog(true)
     }
   
@@ -127,8 +133,8 @@ export default function TripTypesPage() {
             </SiteHeader>
     <div className="flex flex-1 flex-col p-6">
         <div className="flex items-center justify-between mb-4">
- <h1 className="text-2xl font-bold">Trip Types</h1>
-  <Button onClick={() =>{reset(), setShowAddDialog(true)} }>Add Trip Type</Button>
+ <h1 className="text-2xl font-bold">Vehicle Types</h1>
+  <Button onClick={() =>{reset(), setShowAddDialog(true)} }>Add Vehicle Type</Button>
         </div>
      {/* DataTable */}
                <DataTable
@@ -145,7 +151,7 @@ export default function TripTypesPage() {
                      ),
                    },
                  ]}
-                 data={tripTypes}
+                 data={vehicleTypes}
                />
      
      
@@ -155,7 +161,7 @@ export default function TripTypesPage() {
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Trip Type</DialogTitle>
+            <DialogTitle>Add Vehicle Type</DialogTitle>
           </DialogHeader>
           <form className="grid grid-cols-1 gap-4" onSubmit={handleSubmit(onAdd)}>
                 <input {...register("name")} placeholder="Name" className="border p-2 rounded" />
@@ -173,7 +179,7 @@ export default function TripTypesPage() {
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Trip Type</DialogTitle>
+            <DialogTitle>Edit Vehicle Type</DialogTitle>
           </DialogHeader>
          <form className="grid grid-cols-1 gap-4" onSubmit={handleSubmit(onEdit)}>
                 <input {...register("name")} placeholder="Name" className="border p-2 rounded" />

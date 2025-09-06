@@ -29,10 +29,20 @@ export async function logout() {
 
     // Remove cookie
     deleteCookie("accessToken");
+    deleteCookie("role");
 
     return { success: true };
   } catch (error) {
     // Still remove cookie even if backend fails
     deleteCookie("accessToken");
+    deleteCookie("role");
     return { success: false, error };
   }}
+
+  // ✅ Reset Password (accepts token + new password)
+export async function resetPassword(token: string, newPassword: string) {
+  return apiFetch("/api/Auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, newPassword }),
+  }, false);
+}
