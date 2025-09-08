@@ -13,7 +13,12 @@ import {
   IconUserCheck,
   IconClipboardList,
   IconWallet,
-  IconUser
+  IconUser,
+  IconMoneybag,
+  IconMoneybagPlus,
+  IconZoomMoney,
+  IconPigMoney,
+  IconCoinBitcoin
 } from "@tabler/icons-react"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -40,6 +45,7 @@ const menuConfig = {
     { title: "Agents", url: "/admin/agents", icon: IconUsers, roles: ["admin"] },
     { title: "Approve Agents", url: "/admin/approveAgents", icon: IconUserCheck, roles: ["admin"] },
     { title: "Agent Vehicles", url: "/admin/agentVehicles", icon: IconCar, roles: ["admin"] },
+    { title: "Vehicles Price", url: "/admin/vehiclePrice", icon: IconCoinBitcoin, roles: ["admin"] },
     { title: "Vehicle Types", url: "/admin/vehicleTypes", icon: IconCarCrane, roles: ["admin"] },
     { title: "Trip Types", url: "/admin/tripTypes", icon: IconRoute, roles: ["admin"] },
     { title: "Bookings", url: "/admin/bookings", icon: IconCalendarEvent, roles: ["admin"] },
