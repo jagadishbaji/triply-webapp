@@ -53,6 +53,7 @@ const menuConfig = {
     // ---- Agent ----
     { title: "Dashboard", url: "/agent/dashboard", icon: IconDashboard, roles: ["agent"] },
     { title: "My Vehicles", url: "/agent/myVehicles", icon: IconCar, roles: ["agent"] },
+    { title: "Vehicles Price", url: "/agent/agentVehiclePrice", icon: IconCoinBitcoin, roles: ["agent"] },
     { title: "My Bookings", url: "/agent/bookings", icon: IconClipboardList, roles: ["agent"] },
     { title: "Payments", url: "/agent/payments", icon: IconWallet, roles: ["agent"] },
     { title: "Profile", url: "/agent/profile", icon: IconUser, roles: ["agent"] },
