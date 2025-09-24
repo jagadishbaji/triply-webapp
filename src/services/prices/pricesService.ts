@@ -37,7 +37,8 @@ export interface PriceDetailsByTrip {
   airportPrice?: number
   outPerKmPrice?: number
   outMinKm?: number
-  tripTypeId: string
+  tripTypeId: string,
+  vehicleTypeId:string
 }
 
 export async function getAllPrices(): Promise<PriceDetailsByTrip[]> {
@@ -79,4 +80,14 @@ export async function deletePrice(id: string) {
 export async function getPricesByAgent(agentId: string): Promise<PriceDetailsByTrip[]> {
   const allPrices = await getAllPrices()
   return allPrices.filter((price) => price.agentId === agentId)
+}
+
+// ✅ NEW FUNCTION
+export async function getPricesByTripTypeId(tripTypeId: string): Promise<PriceDetailsByTrip[]> {
+  return apiFetch<PriceDetailsByTrip[]>(
+    `/api/prices/pricebytrip/${tripTypeId}`,
+    {
+      method: "GET"
+    }
+  )
 }

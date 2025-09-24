@@ -13,6 +13,7 @@ export function middleware(req: NextRequest) {
     "/userSignup",
     "/forgot-password",
     "/reset-password",
+     "/user/vehicles",
   ];
 
   if (!token && !publicPaths.includes(pathname) && pathname !== "/") {
