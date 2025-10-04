@@ -8,10 +8,16 @@ export async function login(email: string, password: string) {
   }, false); // no token required
 }
 
-export async function register(userData: any) {
+export async function register(userData: { fullname: string; mobile: string; email: string; password: string }) {
   return apiFetch("/api/Auth/signup", {
     method: "POST",
-    body: JSON.stringify(userData),
+    body: JSON.stringify({
+      fullName: userData.fullname,
+      mobile: userData.mobile,
+      email: userData.email,
+      password: userData.password,
+      role: "user"
+    }),
   }, false); // no token required
 }
 export async function forgotPassword(email: string) {

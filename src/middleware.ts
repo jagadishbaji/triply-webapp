@@ -6,22 +6,34 @@ export function middleware(req: NextRequest) {
   const role = req.cookies.get("role")?.value;
   const { pathname } = req.nextUrl;
 
-  // Public routes (no login required)
+  // ✅ Define public routes
   const publicPaths = [
     "/login",
-    "/agentSignup",
-    "/userSignup",
+    "/agent-signup",
+    "/user-signup",
     "/forgot-password",
     "/reset-password",
-     "/user/vehicles",
+    "/user/vehicles",
+    "/",
   ];
 
-  if (!token && !publicPaths.includes(pathname) && pathname !== "/") {
+  const isPublic = publicPaths.some(
+    (path) => pathname === path || pathname.startsWith(path + "/")
+  );
+
+  // 🚀 Debug log (optional)
+  console.log("PATHNAME:", pathname, "TOKEN:", token, "IS_PUBLIC:", isPublic);
+if(pathname=== "/agent-signup") {
+  console.log("AGENT SIGNUP PAGE");
+   return NextResponse.redirect(new URL("/agent-signup", req.url));
+}
+  // ✅ Allow public routes without token
+  if (!token && !isPublic) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // If logged in and trying to access login/signup → redirect to respective dashboard
-  if (token && publicPaths.includes(pathname)) {
+  // ✅ If logged in and visiting a public route → send to dashboard
+  if (token && isPublic) {
     if (role === "admin") {
       return NextResponse.redirect(new URL("/admin/dashboard", req.url));
     }
@@ -30,7 +42,7 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // Redirect `/` → role-specific dashboard
+  // ✅ If logged in and on root `/` → send to dashboard
   if (pathname === "/" && token) {
     if (role === "admin") {
       return NextResponse.redirect(new URL("/admin/dashboard", req.url));
@@ -40,7 +52,7 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // Role-based protection
+  // ✅ Role-based protection
   if (pathname.startsWith("/admin") && role !== "admin") {
     return NextResponse.redirect(new URL("/login", req.url));
   }
@@ -53,7 +65,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-     "/((?!_next/static|_next/image|favicon.ico|cars|.*\\.(?:svg|png|jpg|jpeg|gif|webp)).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js)).*)"],
 };

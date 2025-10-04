@@ -1,105 +1,132 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@supabase/supabase-js";
-
-// ✅ Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { Lock } from "lucide-react";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token") || "";
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
-  useEffect(() => {
-    // Supabase automatically sets the session after recovery link
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) {
-        setError("Invalid or expired reset link. Please request again.");
-      }
-    });
-  }, []);
-
-  const handleResetPassword = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
+    setMessage("");
+
+    if (!password || !confirmPassword) {
+      setError("Please fill in all fields.");
+      return;
+    }
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
-
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
 
-      setSuccess("Password reset successful! Redirecting to login...");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/Auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.json();
+        throw new Error(errText.msg || "Failed to reset password");
+      }
+
+      setMessage("Your password has been reset successfully.");
       setTimeout(() => router.push("/login"), 2000);
     } catch (err: any) {
-      setError(err.message || "Password reset failed");
+      setError(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <Card className="w-full max-w-md shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-100 via-white to-green-200 relative overflow-hidden">
+      {/* Decorative Blobs */}
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-green-200 rounded-full opacity-30 blur-3xl z-0" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-green-400 rounded-full opacity-20 blur-3xl z-0" />
+      <Card className="w-full max-w-md shadow-2xl border-0 rounded-3xl bg-white/90 backdrop-blur-lg relative z-10">
         <CardHeader>
-          <div className="flex flex-col items-center text-center">
-            <h1 className="text-2xl font-bold">Reset your password</h1>
-            <p className="text-muted-foreground text-balance">
+          <div className="flex flex-col items-center text-center gap-2">
+            <span className="inline-flex items-center justify-center bg-gradient-to-br from-green-500 to-green-700 rounded-full w-16 h-16 shadow-lg mb-2">
+              <Lock className="w-8 h-8 text-white" />
+            </span>
+            <h1 className="text-3xl font-extrabold text-gray-900">
+              Reset Password
+            </h1>
+            <p className="text-muted-foreground text-base">
               Enter your new password below
             </p>
           </div>
         </CardHeader>
-        <form onSubmit={handleResetPassword}>
-          <CardContent className="space-y-4">
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-5">
             {error && (
               <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
                 {error}
               </p>
             )}
-            {success && (
+            {message && (
               <p className="text-sm text-green-600 bg-green-50 border border-green-200 rounded p-2">
-                {success}
+                {message}
               </p>
             )}
+
             <div className="grid gap-3">
-              <Label htmlFor="password">New Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter new password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <Label htmlFor="password" className="text-green-700 font-semibold">
+                New Password
+              </Label>
+              <div className="flex items-center bg-green-50 rounded-xl px-3">
+                <Lock className="w-5 h-5 text-green-400 mr-2" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter new password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="border-0 bg-transparent focus:ring-0 text-base"
+                />
+              </div>
             </div>
             <div className="grid gap-3">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirm new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
+              <Label htmlFor="confirmPassword" className="text-green-700 font-semibold">
+                Confirm Password
+              </Label>
+              <div className="flex items-center bg-green-50 rounded-xl px-3">
+                <Lock className="w-5 h-5 text-green-400 mr-2" />
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="border-0 bg-transparent focus:ring-0 text-base"
+                />
+              </div>
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-bold rounded-xl h-12 text-lg shadow-lg transition"
+              disabled={loading}
+            >
               {loading ? "Resetting..." : "Reset Password"}
             </Button>
           </CardContent>
