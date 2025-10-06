@@ -1,4 +1,5 @@
 import { getCookie } from "cookies-next";
+import { apiFetch } from "@/lib/api";
 
 export interface BookingRequest {
   userId: string;
@@ -71,3 +72,77 @@ export const createBooking = async (
     throw new Error(error.message || "Failed to create booking.");
   }
 };
+
+// ==================== List current user's bookings ====================
+export interface MyBooking {
+  id?: string;
+  bookingId?: string;
+  status?: string;
+  pickupLocation?: string;
+  dropLocation?: string;
+  pickupDateTime?: string;
+  tripTypeName?: string;
+  agentVehicleName?: string;
+  vehicleName?: string;
+  createdAt?: string;
+  [key: string]: any;
+}
+
+export async function myBookings(): Promise<MyBooking[]> {
+  return apiFetch<MyBooking[]>("/api/bookings/my", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${getCookie("accessToken")}`,
+    },
+  });
+}
+
+// ==================== Agent bookings and updates ====================
+export interface AgentBooking extends MyBooking {
+  userName?: string;
+  phone?: string;
+}
+
+export async function getBookingsByAgent(agentId: string): Promise<AgentBooking[]> {
+  return apiFetch<AgentBooking[]>(`/api/Bookings/bookingsbyagent/${agentId}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${getCookie("accessToken")}`,
+    },
+  });
+}
+
+export type BookingStatus = "pending" | "confirmed" | "ongoing" | "completed" | "cancelled" | "accept" | "reject";
+
+export async function updateBookingStatus(id: string, status: BookingStatus): Promise<any> {
+  // Map legacy actions to accepted statuses
+  const map: Record<string, BookingStatus> = {
+    accept: "confirmed",
+    reject: "cancelled",
+  } as const;
+
+  const finalStatus = (map[status] as BookingStatus) || status;
+  const allowed: BookingStatus[] = ["pending", "confirmed", "ongoing", "completed", "cancelled"];
+  if (!allowed.includes(finalStatus)) {
+    throw new Error(`Invalid status '${status}'. Allowed: ${allowed.join(", ")}`);
+  }
+
+  return apiFetch(`/api/Bookings/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getCookie("accessToken")}`,
+    },
+    body: JSON.stringify({ status: finalStatus }),
+  });
+}
+
+// Get a single booking by ID (for details modal)
+export async function getBookingById(id: string): Promise<AgentBooking> {
+  return apiFetch<AgentBooking>(`/api/Bookings/${id}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${getCookie("accessToken")}`,
+    },
+  });
+}

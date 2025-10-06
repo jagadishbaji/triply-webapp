@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DollarSign, Users, MapPin, Calendar, Repeat, Car, LogOut, User, ClipboardList, ArrowRight, Check, X, AlertCircle } from "lucide-react"
+import { Users, MapPin, Calendar, Repeat, Car, LogOut, User, ClipboardList, ArrowRight, Check, X, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { getCookie } from "cookies-next"
 
@@ -82,7 +82,7 @@ export default function VehiclesPage() {
 
   //booking suces
   // Add state
-const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   useEffect(() => {
     setAccessToken(getCookie("accessToken") as string || null)
     setLoginId(getCookie("loginId") as string || null)
@@ -206,7 +206,7 @@ const [showSuccessModal, setShowSuccessModal] = useState(false);
         
         
       </div>
-      <span className="text-xs text-black-400 mt-1">
+      <span className="text-xs text-gray-400 mt-1">
           <strong>Note:</strong> Charges may vary. Please discuss with the agent for final pricing.
         </span>
       </>
@@ -243,22 +243,22 @@ const [showSuccessModal, setShowSuccessModal] = useState(false);
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4 bg-gradient-to-b from-white to-green-50">
+    <div className="min-h-screen w-full bg-gradient-to-br from-green-100 via-white to-green-200">
       <Toaster />
-      {/* Enhanced Site Header */}
+      {/* Header - aligned with landing */}
       <motion.header 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="flex items-center justify-between px-8 py-5 bg-white/90 backdrop-blur-md shadow-xl rounded-3xl mb-10 border border-green-100"
+        className="flex items-center justify-between px-6 md:px-10 py-5 bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-30 border-b border-green-100"
       >
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
-          Triply Cars
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+          <span className="bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">Triply Cars</span>
         </h1>
         <div className="flex items-center gap-4">
           {accessToken ? (
             <>
-              <Link href="/user/bookings">
+              <Link href="/user/mybookings">
                 <Button variant="ghost" className="gap-2 text-green-700 hover:bg-green-50 rounded-xl font-semibold transition-all duration-300">
                   <ClipboardList className="w-5 h-5" />
                   My Bookings
@@ -296,13 +296,9 @@ const [showSuccessModal, setShowSuccessModal] = useState(false);
         </div>
       </motion.header>
 
-      {/* Editable Search Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-      >
-        <Card className="mb-16 border-0 bg-white/90 shadow-2xl rounded-[2.5rem]">
+      {/* SEARCH SECTION - matches landing */}
+      <section className="relative z-20 flex flex-col items-center pt-6">
+        <Card className="w-full max-w-7xl mx-auto rounded-[2.5rem] shadow-2xl border-0 bg-white/90 backdrop-blur-lg">
           <CardContent className="p-0">
             <form
               onSubmit={handleSearch}
@@ -311,19 +307,19 @@ const [showSuccessModal, setShowSuccessModal] = useState(false);
                 background:
                   "linear-gradient(90deg, #e0ffe6 0%, #f8fafc 60%, #e0ffe6 100%)",
                 borderRadius: "2.5rem",
-                boxShadow: "0 8px 32px 0 rgba(34,197,94,0.15)",
-                padding: "2.5rem 2rem",
+                boxShadow: "0 8px 32px 0 rgba(34,197,94,0.10)",
+                padding: "1.5rem 1.5rem",
                 position: "relative",
                 top: "-2rem",
                 zIndex: 10,
               }}
             >
               {/* Trip Type */}
-              <div className="flex flex-col w-full md:w-1/5 px-2">
+              <div className="flex flex-col flex-1 min-w-[180px] px-2">
                 <label className="mb-2 text-xs font-semibold text-green-700 tracking-widest uppercase">
                   Trip Type
                 </label>
-                <div className="flex items-center bg-gradient-to-r from-green-50 to-green-100 border-0 rounded-2xl px-3 py-2 shadow-md w-full hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition w-full">
                   <Repeat className="w-5 h-5 text-green-500 mr-2" />
                   <Select value={tripTypeId} onValueChange={setTripTypeId} required>
                     <SelectTrigger className="border-0 focus:ring-0 h-10 text-base bg-transparent font-medium w-full">
@@ -341,11 +337,11 @@ const [showSuccessModal, setShowSuccessModal] = useState(false);
               </div>
 
               {/* Pickup */}
-              <div className="flex flex-col w-full md:w-1/5 px-2">
+              <div className="flex flex-col flex-1 min-w-[180px] px-2">
                 <label className="mb-2 text-xs font-semibold text-green-700 tracking-widest uppercase">
                   Pickup
                 </label>
-                <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition-all duration-300 hover:shadow-lg">
+                <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition w-full">
                   <MapPin className="w-5 h-5 text-green-400 mr-2" />
                   <Input
                     type="text"
@@ -360,11 +356,11 @@ const [showSuccessModal, setShowSuccessModal] = useState(false);
 
               {/* Destination (hide if Airport) */}
               {tripTypes.find((t) => t.id === tripTypeId)?.name !== "Airport" && (
-                <div className="flex flex-col w-full md:w-1/5 px-2">
+                <div className="flex flex-col flex-1 min-w-[180px] px-2">
                   <label className="mb-2 text-xs font-semibold text-green-700 tracking-widest uppercase">
                     Drop
                   </label>
-                  <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition-all duration-300 hover:shadow-lg">
+                  <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition w-full">
                     <MapPin className="w-5 h-5 text-green-400 mr-2" />
                     <Input
                       type="text"
@@ -379,11 +375,11 @@ const [showSuccessModal, setShowSuccessModal] = useState(false);
               )}
 
               {/* Date */}
-              <div className="flex flex-col w-full md:w-1/5 px-2">
+              <div className="flex flex-col flex-1 min-w-[180px] px-2">
                 <label className="mb-2 text-xs font-semibold text-green-700 tracking-widest uppercase">
                   Date
                 </label>
-                <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition-all duration-300 hover:shadow-lg">
+                <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition w-full">
                   <Calendar className="w-5 h-5 text-green-400 mr-2" />
                   <Input
                     type="date"
@@ -396,11 +392,11 @@ const [showSuccessModal, setShowSuccessModal] = useState(false);
               </div>
 
               {/* Vehicle Type */}
-              <div className="flex flex-col w-full md:w-1/5 px-2">
+              <div className="flex flex-col flex-1 min-w-[180px] px-2">
                 <label className="mb-2 text-xs font-semibold text-green-700 tracking-widest uppercase">
                   Vehicle
                 </label>
-                <div className="flex items-center bg-gradient-to-r from-green-50 to-green-100 border-0 rounded-2xl px-3 py-2 shadow-md w-full hover:shadow-lg transition-all duration-300">
+                <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition w-full">
                   <Car className="w-5 h-5 text-green-500 mr-2" />
                   <Select value={vehicleTypeId} onValueChange={setVehicleTypeId} required>
                     <SelectTrigger className="border-0 focus:ring-0 h-10 text-base bg-transparent font-medium w-full">
@@ -418,10 +414,10 @@ const [showSuccessModal, setShowSuccessModal] = useState(false);
               </div>
 
               {/* Search Button */}
-              <div className="flex flex-col w-full md:w-32 px-2 mt-6 md:mt-0">
+              <div className="flex flex-col flex-[0.7] min-w-[140px] px-2 mt-6 md:mt-0">
                 <Button
                   type="submit"
-                  className="h-12 w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white text-base rounded-2xl shadow-lg font-bold tracking-wide transition-all duration-300 hover:shadow-xl hover:scale-105"
+                  className="h-12 w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white text-base rounded-2xl shadow-lg font-bold tracking-wide transition-transform hover:scale-105"
                 >
                   Search
                 </Button>
@@ -429,14 +425,14 @@ const [showSuccessModal, setShowSuccessModal] = useState(false);
             </form>
           </CardContent>
         </Card>
-      </motion.div>
+      </section>
 
-      {/* Enhanced Available Vehicles Heading */}
+      {/* Vehicles Heading */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="text-center mb-16"
+        className="text-center mb-12 mt-6"
       >
         <h2 className="text-4xl font-bold text-gray-900 mb-3">Premium Fleet Selection</h2>
         <div className="h-1.5 w-24 bg-gradient-to-r from-green-400 to-green-600 rounded-full mx-auto mb-4"></div>
@@ -469,7 +465,7 @@ const [showSuccessModal, setShowSuccessModal] = useState(false);
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-center py-16 bg-white/80 rounded-3xl shadow-lg"
+          className="text-center py-16 bg-white/80 rounded-3xl shadow-lg max-w-4xl mx-auto"
         >
           <motion.div
             className="md:w-1/2 flex justify-center mx-auto"
@@ -489,7 +485,7 @@ const [showSuccessModal, setShowSuccessModal] = useState(false);
       )}
 
       {/* Vehicle Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      <div className="max-w-7xl mx-auto px-4 pb-20 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {vehicles.map((vehicle, index) => (
           <motion.div
             key={vehicle.id}
@@ -541,8 +537,6 @@ const [showSuccessModal, setShowSuccessModal] = useState(false);
                        router.push("/login?redirect=vehicles");
                        return;
                      }
-                     
-                     // Open confirmation modal instead of direct navigation
                      setSelectedVehicle(vehicle);
                      setIsConfirmOpen(true);
                    }}
@@ -697,7 +691,6 @@ const [showSuccessModal, setShowSuccessModal] = useState(false);
                           throw new Error("User ID not found. Please log in again.");
                         }
                         
-                       
                         // Format date for API
                         const formattedDate = new Date(date).toISOString();
                         
@@ -720,16 +713,7 @@ const [showSuccessModal, setShowSuccessModal] = useState(false);
                         
                         // Handle success
                         setBookingSuccess(true);
-                       
-                        //Show modal
                         setShowSuccessModal(true);
-                        
-                        // // Close modal after short delay
-                        // setTimeout(() => {
-                        //   setIsConfirmOpen(false);
-                        //   // Redirect to bookings page
-                        //   router.push("/user/bookings");
-                        // }, 2000);
                         
                       } catch (error) {
                         console.error("Booking error:", error);                        
