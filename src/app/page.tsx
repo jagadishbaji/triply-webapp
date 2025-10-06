@@ -286,7 +286,7 @@ export default function LandingPage() {
           </Card>
         </div>
       </section>
-
+<AvailableVehicles></AvailableVehicles>
       {/* ENHANCED AVAILABLE VEHICLES SECTION */}
       <section className="py-20 bg-gradient-to-br from-green-50 via-white to-green-100">
         <div className="max-w-7xl mx-auto px-4">
