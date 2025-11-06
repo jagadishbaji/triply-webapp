@@ -1,16 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Users, MapPin, Calendar, Repeat, Car, LogOut, User, ClipboardList, ArrowRight, Check, X, AlertCircle } from "lucide-react"
+import { Users, MapPin, Calendar, Repeat, Car, ArrowRight, Check, X, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { getCookie } from "cookies-next"
 
-// Services
 import { getPricesByTripTypeId } from "@/services/prices/pricesService"
 import { gettripTypes } from "@/services/admin/tripTypesService"
 import { getVehicleTypes } from "@/services/admin/vehicleTypesService"
@@ -29,9 +28,8 @@ import {
 } from "@/components/ui/dialog"
 import { toast, Toaster } from "sonner"
 
-import BookingSuccessModal from "@/components/bookingSuccessfull";
-
-import { CheckCircle } from "lucide-react";
+import BookingSuccessModal from "@/components/bookingSuccessfull"
+import UserHeader from "@/components/user/UserHeader"
 
 interface VehiclePrice {
   id: string
@@ -80,13 +78,13 @@ export default function VehiclesPage() {
   const [loginId, setLoginId] = useState<string | null>(null)
   const [loggedName, setLoggedName] = useState<string | null>(null)
 
-  //booking suces
-  // Add state
+  // success modal
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
   useEffect(() => {
-    setAccessToken(getCookie("accessToken") as string || null)
-    setLoginId(getCookie("loginId") as string || null)
-    setLoggedName(getCookie("loggedName") as string || null)
+    setAccessToken((getCookie("accessToken") as string) || null)
+    setLoginId((getCookie("loginId") as string) || null)
+    setLoggedName((getCookie("loggedName") as string) || null)
   }, [])
 
   useEffect(() => {
@@ -122,7 +120,6 @@ export default function VehiclesPage() {
     fetchVehicles()
   }, [tripTypeId, vehicleTypeId])
 
-  // ✅ Handle search again
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -142,23 +139,17 @@ export default function VehiclesPage() {
     router.push(`${pathname}?${query.toString()}`)
   }
 
-  // Masking function for agent name
   const maskAgentName = (name: string) => {
     if (!name) return "Agent: ****";
     const [first, ...rest] = name.split(" ");
     return `${first[0]}****${rest.length ? " " + rest.map(w => w[0] + "***").join(" ") : ""}`;
   };
 
-  // Masking function for price
   const maskPrice = () => "₹****";
-
-  // Masking function for km
   const maskKm = () => "**";
 
-  // Show price details based on login
   const renderPriceDetails = (vehicle: VehiclePrice) => {
     if (!accessToken) {
-      // Masked for not-logged-in users
       return (
         <div className="flex flex-col items-start bg-green-50 border border-green-200 rounded-xl px-4 py-3 mb-2 w-full">
           <span className="text-sm font-semibold text-gray-700 mb-1">Price</span>
@@ -178,7 +169,6 @@ export default function VehiclesPage() {
       )
     }
 
-    // Show actual price details for logged-in users
     let price = "";
     let minKm = "";
     if (vehicle.tripTypeName === "Local") {
@@ -193,27 +183,24 @@ export default function VehiclesPage() {
     }
     return (
       <>
-      <div className="flex flex-col items-start bg-green-50 border border-green-200 rounded-xl px-4 py-3 mb-2 w-full">
-        <span className="text-sm font-semibold text-gray-700 mb-1">Price</span>
-        <span className="text-lg font-bold text-green-700 mb-1">
-          {price} <span className="text-base font-medium text-gray-700">{vehicle.tripTypeName === "Airport" ? "" : "/km"}</span>
-        </span>
-        {vehicle.tripTypeName !== "Airport" && (
-          <span className="text-base text-gray-700 font-semibold">
-            Minimum {minKm} km per booking
+        <div className="flex flex-col items-start bg-green-50 border border-green-200 rounded-xl px-4 py-3 mb-2 w-full">
+          <span className="text-sm font-semibold text-gray-700 mb-1">Price</span>
+          <span className="text-lg font-bold text-green-700 mb-1">
+            {price} <span className="text-base font-medium text-gray-700">{vehicle.tripTypeName === "Airport" ? "" : "/km"}</span>
           </span>
-        )}
-        
-        
-      </div>
-      <span className="text-xs text-gray-400 mt-1">
+          {vehicle.tripTypeName !== "Airport" && (
+            <span className="text-base text-gray-700 font-semibold">
+              Minimum {minKm} km per booking
+            </span>
+          )}
+        </div>
+        <span className="text-xs text-gray-400 mt-1">
           <strong>Note:</strong> Charges may vary. Please discuss with the agent for final pricing.
         </span>
       </>
     )
   }
 
-  // Show agent name based on login
   const renderAgentName = (name: string) => {
     if (!accessToken) {
       return (
@@ -226,7 +213,6 @@ export default function VehiclesPage() {
     return <span className="font-medium text-gray-700">{name}</span>
   }
 
-  // vehicle name → image mapping (using agentVehicleName now)
   const getVehicleImage = (agentVehicleName: string) => {
     const normalized = agentVehicleName?.toLowerCase().replace(/\s+/g, "").trim() || ""
     if (normalized.includes("mini")) return "/images/cars/sedan-car.jpg"
@@ -236,65 +222,16 @@ export default function VehiclesPage() {
     return "/images/cars/vehicle-placeholder.png"
   }
 
-  // Header enhancement
-  const handleLogout = async () => {
+  // Use shared header like MyBookings
+  const onLogout = useCallback(async () => {
     await logout();
     router.push("/login");
-  };
+  }, [router]);
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-green-100 via-white to-green-200">
       <Toaster />
-      {/* Header - aligned with landing */}
-      <motion.header 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex items-center justify-between px-6 md:px-10 py-5 bg-white/80 backdrop-blur-md shadow-lg sticky top-0 z-30 border-b border-green-100"
-      >
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-          <span className="bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">Triply Cars</span>
-        </h1>
-        <div className="flex items-center gap-4">
-          {accessToken ? (
-            <>
-              <Link href="/user/mybookings">
-                <Button variant="ghost" className="gap-2 text-green-700 hover:bg-green-50 rounded-xl font-semibold transition-all duration-300">
-                  <ClipboardList className="w-5 h-5" />
-                  My Bookings
-                </Button>
-              </Link>
-              <Link href="/user/profile">
-                <Button variant="ghost" className="gap-2 text-green-700 hover:bg-green-50 rounded-xl font-semibold transition-all duration-300">
-                  <User className="w-5 h-5" />
-                  Profile
-                </Button>
-              </Link>
-              <Button
-                variant="ghost"
-                className="gap-2 text-green-700 hover:text-white hover:bg-gradient-to-r hover:from-green-500 hover:to-green-700 font-semibold rounded-xl transition-all duration-300"
-                onClick={handleLogout}
-              >
-                <LogOut className="h-5 w-5" />
-                Logout
-              </Button>
-            </>
-          ) : (
-            <>
-              <Link href="/login">
-                <Button variant="outline" className="rounded-xl border-green-500 text-green-700 font-semibold hover:bg-green-50 transition-all duration-300">
-                  Login
-                </Button>
-              </Link>
-              <Link href="/user-signup">
-                <Button className="bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white rounded-xl font-semibold transition-all duration-300">
-                  Sign Up
-                </Button>
-              </Link>
-            </>
-          )}
-        </div>
-      </motion.header>
+      <UserHeader onLogout={onLogout} title="Search Vehicles" />
 
       {/* SEARCH SECTION - matches landing */}
       <section className="relative z-20 flex flex-col items-center pt-6">
@@ -531,28 +468,27 @@ export default function VehiclesPage() {
                 <div className="mb-2 flex-grow">{renderPriceDetails(vehicle)}</div>
 
                 <Button 
-                   className="mt-2 bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-medium w-full flex items-center justify-center gap-2 rounded-xl shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 group"
-                   onClick={() => {
-                     if (!accessToken) {
-                       router.push("/login?redirect=vehicles");
-                       return;
-                     }
-                     setSelectedVehicle(vehicle);
-                     setIsConfirmOpen(true);
-                   }}
-                 >
-                   {accessToken ? (
-                     <span className="flex items-center justify-center">
-                       Book Now
-                       <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
-                     </span>
-                   ) : (
-                     <span className="flex items-center justify-center">
-                       Login to Book
-                       <User className="ml-2 h-5 w-5" />
-                     </span>
-                   )}
-                 </Button>
+                  className="mt-2 bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-medium w-full flex items-center justify-center gap-2 rounded-xl shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 group"
+                  onClick={() => {
+                    if (!accessToken) {
+                      router.push("/login?redirect=vehicles");
+                      return;
+                    }
+                    setSelectedVehicle(vehicle);
+                    setIsConfirmOpen(true);
+                  }}
+                >
+                  {accessToken ? (
+                    <span className="flex items-center justify-center">
+                      Book Now
+                      <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center">
+                      Login to Book
+                    </span>
+                  )}
+                </Button>
               </CardContent>
             </Card>
           </motion.div>
@@ -685,33 +621,27 @@ export default function VehiclesPage() {
                         setIsBooking(true);
                         setBookingError("");
                         
-                        // Get user ID from token
                         const userId = getCookie("loginId") as string;
                         if (!userId) {
                           throw new Error("User ID not found. Please log in again.");
                         }
                         
-                        // Format date for API
                         const formattedDate = new Date(date).toISOString();
                         
-                        // Create booking request
                         const bookingData: BookingRequest = {
                           userId,
                           agentVehicleId: selectedVehicle.agentVehicleId,
                           tripTypeId,
-                          priceId:selectedVehicle.id,
+                          priceId: selectedVehicle.id,
                           pickupLocation: pickup,
                           dropLocation: destination || "",
                           pickupDateTime: formattedDate
                         };
                         
-                        // Get token
                         const token = getCookie("accessToken") as string;
                         
-                        // Call API
-                        const response = await createBooking(bookingData, token);
+                        await createBooking(bookingData, token);
                         
-                        // Handle success
                         setBookingSuccess(true);
                         setShowSuccessModal(true);
                         

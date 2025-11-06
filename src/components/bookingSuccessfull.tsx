@@ -27,7 +27,7 @@ export default function BookingSuccessModal({ open, onClose }: BookingSuccessMod
 
   const handleClose = () => {
     onClose();
-    router.push("/user/bookings");
+    router.push("/user/mybookings");
   };
 
   return (

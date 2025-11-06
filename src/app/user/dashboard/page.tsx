@@ -1,240 +1,264 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { getCookie } from "cookies-next";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
-
-import { Car, MapPin, Repeat, Calendar, LogOut, User, ClipboardList } from "lucide-react";
-
-import { gettripTypes } from "@/services/admin/tripTypesService";
-import { getVehicleTypes } from "@/services/admin/vehicleTypesService";
+import { myBookings, MyBooking } from "@/services/bookingService";
 import { logout } from "@/services/authService";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Clock3, Calendar, ClipboardList, User } from "lucide-react";
 
-export default function UserDashboardPage() {
+import UserHeader from "@/components/user/UserHeader";
+import useAuthGuard from "@/components/hooks/useAuthGuard";
+
+interface GroupedBookings {
+  date: string;
+  items: MyBooking[];
+}
+
+function formatDate(dateStr?: string) {
+  if (!dateStr) return "-";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "-";
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+function formatTime(dateStr?: string) {
+  if (!dateStr) return "-";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "-";
+  return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+
+function statusBadge(status?: string): { label: string; className: string } {
+  const s = (status || "").toLowerCase();
+  if (s.includes("confirm") || s === "approved") return { label: "Confirmed", className: "bg-green-100 text-green-700 border border-green-200" };
+  if (s.includes("pending")) return { label: "Pending", className: "bg-amber-100 text-amber-700 border border-amber-200" };
+  if (s.includes("cancel")) return { label: "Cancelled", className: "bg-red-100 text-red-700 border red-200" };
+  return { label: status || "-", className: "bg-gray-100 text-gray-700 border-gray-200" };
+}
+
+function isConfirmed(status?: string) {
+  const s = (status || "").toLowerCase();
+  return s.includes("confirm") || s === "approved";
+}
+
+export default function MyBookingsPage() {
+  useAuthGuard();
+
   const router = useRouter();
-
-  const [tripTypes, setTripTypes] = useState<any[]>([]);
-  const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
-
-  const [tripTypeId, setTripTypeId] = useState("");
-  const [tripTypeName, setTripTypeName] = useState("");
-  const [vehicleTypeId, setVehicleTypeId] = useState("");
-  const [vehicleTypeName, setVehicleTypeName] = useState("");
-  const [pickup, setPickup] = useState("");
-  const [destination, setDestination] = useState("");
-  const [date, setDate] = useState("");
-  const [userName, setUserName] = useState("User");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [bookings, setBookings] = useState<MyBooking[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const trips = await gettripTypes();
-        setTripTypes(trips || []);
-        const vehicles = await getVehicleTypes();
-        setVehicleTypes(vehicles || []);
-      } catch (err) {
-        // Handle errors silently for UX
-      }
-    };
-    fetchData();
-
-    const name = getCookie("loggedName");
-    if (name) setUserName(name as string);
-  }, []);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!tripTypeId || !pickup || !date || !vehicleTypeId || (tripTypeName !== "Airport" && !destination)) {
-      alert("Please fill in all required fields before searching.");
+    const token = getCookie("accessToken") as string | undefined;
+    if (!token) {
+      router.push("/login?redirect=/user/mybookings");
       return;
     }
 
-    router.push(
-      `/user/vehicles?tripTypeId=${tripTypeId}&tripTypeName=${encodeURIComponent(tripTypeName)}&vehicleTypeId=${vehicleTypeId}&vehicleTypeName=${encodeURIComponent(vehicleTypeName)}&pickup=${encodeURIComponent(pickup)}&destination=${encodeURIComponent(destination)}&date=${encodeURIComponent(date)}`
-    );
-  };
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await myBookings();
+        setBookings(data || []);
+      } catch (err: any) {
+        setError(err?.message || "Failed to load bookings.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleLogout = async () => {
+    load();
+  }, [router]);
+
+  const onLogout = useCallback(async () => {
     await logout();
     router.push("/login");
-  };
+  }, [router]);
+
+  const grouped = useMemo<GroupedBookings[]>(() => {
+    const groups: Record<string, MyBooking[]> = {};
+    for (const b of bookings) {
+      const keyDate = new Date((b as any).pickupTime || (b as any).pickupDateTime || b.createdAt || Date.now());
+      const key = isNaN(keyDate.getTime()) ? new Date().toDateString() : keyDate.toDateString();
+      (groups[key] ||= []).push(b);
+    }
+    return Object.entries(groups)
+      .map(([k, items]) => ({
+        date: k,
+        items: items.sort(
+          (a, b) =>
+            new Date((a as any).pickupTime || (a as any).pickupDateTime || 0).getTime() -
+            new Date((b as any).pickupTime || (b as any).pickupDateTime || 0).getTime()
+        ),
+      }))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [bookings]);
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-green-100 via-white to-green-200">
-      {/* Header - rounded and consistent with site theme */}
-      <header className="flex items-center justify-between px-6 md:px-10 py-4 bg-white/90 backdrop-blur-md shadow-xl rounded-3xl border border-green-100 mx-4 mt-4 sticky top-0 z-30">
-        <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-          <span className="bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">Triply Cars</span>
-        </h1>
-        <nav className="flex items-center gap-3 md:gap-4">
-          <Link href="/">
-            <Button variant="ghost" className="rounded-xl text-green-700 hover:bg-green-50 font-semibold">Home</Button>
-          </Link>
-          <Link href="/user/mybookings">
-            <Button variant="ghost" className="gap-2 text-green-700 hover:bg-green-50 rounded-xl font-semibold">
-              <ClipboardList className="w-5 h-5" />
-              My Bookings
-            </Button>
-          </Link>
-          <Link href="/user/profile">
-            <Button variant="ghost" className="gap-2 text-green-700 hover:bg-green-50 rounded-xl font-semibold">
-              <User className="w-5 h-5" />
-              Profile
-            </Button>
-          </Link>
-          <Button
-            variant="ghost"
-            className="gap-2 text-green-700 hover:text-white hover:bg-gradient-to-r hover:from-green-500 hover:to-green-700 font-semibold rounded-xl"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-5 w-5" />
-            Logout
-          </Button>
-        </nav>
-      </header>
+      <UserHeader onLogout={onLogout} title="My Bookings" />
 
-      {/* Welcome Section */}
-      <section className="w-full text-center py-12 px-6">
-        <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">
-          Welcome, <span className="bg-gradient-to-r from-green-500 to-green-700 bg-clip-text text-transparent">{userName}</span>!
-        </h2>
-        <p className="text-lg text-gray-700">Ready to book your next ride? Use the search below to get started.</p>
-      </section>
+      <main className="py-10">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-extrabold text-gray-900">Your Trips</h2>
+            <p className="text-gray-600 mt-2">Track and manage your bookings in one place</p>
+            <div className="h-1 w-24 bg-gradient-to-r from-green-400 to-green-600 rounded-full mx-auto mt-4" />
+          </div>
 
-      {/* Search Section - same design as landing page */}
-      <section className="relative z-20 flex flex-col items-center pb-8">
-        <Card className="w-full max-w-7xl mx-auto rounded-[2.5rem] shadow-2xl border-0 bg-white/90 backdrop-blur-lg">
-          <CardContent className="p-0">
-            <form
-              onSubmit={handleSearch}
-              className="flex flex-col md:flex-row items-center gap-0 md:gap-4"
-              style={{
-                background: "linear-gradient(90deg, #e0ffe6 0%, #f8fafc 60%, #e0ffe6 100%)",
-                borderRadius: "2.5rem",
-                boxShadow: "0 8px 32px 0 rgba(34,197,94,0.10)",
-                padding: "1.5rem 1.5rem",
-                position: "relative",
-                top: "-2rem",
-                zIndex: 10,
-              }}
-            >
-              {/* Trip Type */}
-              <div className="flex flex-col flex-1 min-w-[180px] px-2">
-                <label className="mb-2 text-xs font-semibold text-green-700 tracking-widest uppercase">Trip Type</label>
-                <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition w-full">
-                  <Select
-                    onValueChange={(val) => {
-                      setTripTypeId(val);
-                      const selected = tripTypes.find((t) => t.id === val);
-                      setTripTypeName(selected?.name || "");
-                    }}
-                    required
-                  >
-                    <SelectTrigger className="border-0 focus:ring-0 h-10 text-base bg-transparent font-medium w-full">
-                      <SelectValue placeholder="Choose" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tripTypes.map((trip) => (
-                        <SelectItem key={trip.id} value={trip.id}>
-                          {trip.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+          {loading && (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i} className="rounded-2xl">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div>
+                          <Skeleton className="h-4 w-44 mb-2" />
+                          <Skeleton className="h-3 w-72" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-9 w-24 rounded-xl" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
 
-              {/* Pickup */}
-              <div className="flex flex-col flex-1 min-w-[180px] px-2">
-                <label className="mb-2 text-xs font-semibold text-green-700 tracking-widest uppercase">Pickup</label>
-                <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition w-full">
-                  <Input
-                    type="text"
-                    placeholder="Pickup location"
-                    value={pickup}
-                    onChange={(e) => setPickup(e.target.value)}
-                    required
-                    className="border-0 focus:ring-0 h-10 text-base bg-transparent font-medium w-full"
-                  />
-                </div>
-              </div>
+          {!loading && error && (
+            <Card className="rounded-2xl border-red-200 bg-red-50">
+              <CardContent className="p-6 text-red-700">{error}</CardContent>
+            </Card>
+          )}
 
-              {/* Destination (hide if Airport) */}
-              {tripTypeName !== "Airport" && (
-                <div className="flex flex-col flex-1 min-w-[180px] px-2">
-                  <label className="mb-2 text-xs font-semibold text-green-700 tracking-widest uppercase">Drop</label>
-                  <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition w-full">
-                    <Input
-                      type="text"
-                      placeholder="Destination"
-                      value={destination}
-                      onChange={(e) => setDestination(e.target.value)}
-                      required={tripTypeName !== "Airport"}
-                      className="border-0 focus:ring-0 h-10 text-base bg-transparent font-medium w-full"
-                    />
+          {!loading && !error && bookings.length === 0 && (
+            <Card className="rounded-3xl shadow-2xl overflow-hidden border-0">
+              <CardContent className="p-12 text-center bg-white/90">
+                <ClipboardList className="w-12 h-12 text-green-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">No bookings yet</h3>
+                <p className="text-gray-600 mb-6">Start your journey by booking your first ride.</p>
+                <Link href="/user/vehicles">
+                  <Button className="rounded-xl bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white">
+                    Browse Vehicles
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+
+          {!loading && !error && bookings.length > 0 && (
+            <div className="space-y-10">
+              {grouped.map((group) => (
+                <section key={group.date}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Calendar className="w-5 h-5 text-green-600" />
+                    <h3 className="text-lg font-semibold text-gray-800">{group.date}</h3>
                   </div>
-                </div>
-              )}
 
-              {/* Date */}
-              <div className="flex flex-col flex-1 min-w-[180px] px-2">
-                <label className="mb-2 text-xs font-semibold text-green-700 tracking-widest uppercase">Date</label>
-                <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition w-full">
-                  <Input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    required
-                    className="border-0 focus:ring-0 h-10 text-base bg-transparent font-medium w-full"
-                  />
-                </div>
-              </div>
+                  <Card className="rounded-2xl overflow-hidden shadow-xl border-0">
+                    <CardContent className="p-0">
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-gradient-to-r from-green-50 to-green-100 border-b border-green-100">
+                              <TableHead className="text-gray-700">Trip</TableHead>
+                              <TableHead className="hidden md:table-cell text-gray-700">Vehicle</TableHead>
+                              <TableHead className="hidden lg:table-cell text-gray-700">Route</TableHead>
+                              <TableHead className="text-gray-700">When</TableHead>
+                              <TableHead className="hidden md:table-cell text-gray-700">Agent</TableHead>
+                              <TableHead className="text-right text-gray-700">Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {group.items.map((b, idx) => {
+                              const s = (b.status || "").toLowerCase();
+                              const confirmed = s.includes("confirm") || s === "approved";
+                              const badge =
+                                s.includes("confirm") || s === "approved"
+                                  ? "bg-green-100 text-green-700 border border-green-200"
+                                  : s.includes("pending")
+                                  ? "bg-amber-100 text-amber-700 border border-amber-200"
+                                  : s.includes("cancel")
+                                  ? "bg-red-100 text-red-700 border-red-200"
+                                  : "bg-gray-100 text-gray-700 border-gray-200";
 
-              {/* Vehicle Type */}
-              <div className="flex flex-col flex-1 min-w-[180px] px-2">
-                <label className="mb-2 text-xs font-semibold text-green-700 tracking-widest uppercase">Vehicle</label>
-                <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition w-full">
-                  <Select
-                    onValueChange={(val) => {
-                      setVehicleTypeId(val);
-                      const selected = vehicleTypes.find((v) => v.id === val);
-                      setVehicleTypeName(selected?.name || "");
-                    }}
-                    required
-                  >
-                    <SelectTrigger className="border-0 focus:ring-0 h-10 text-base bg-transparent font-medium w-full">
-                      <SelectValue placeholder="Choose" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vehicleTypes.map((vehicle) => (
-                        <SelectItem key={vehicle.id} value={vehicle.id}>
-                          {vehicle.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                              const trip = b.tripTypeName || "Trip";
+                              const vehicle = (b as any).agentVehicleName || b.vehicleName || "-";
+                              const pickup = b.pickupLocation || "-";
+                              const drop = (b as any).dropoffLocation || (b as any).dropLocation || "-";
 
-              {/* Search Button */}
-              <div className="flex flex-col flex-[0.7] min-w-[140px] px-2 mt-6 md:mt-0">
-                <Button
-                  type="submit"
-                  className="h-12 w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white text-base rounded-2xl shadow-lg font-bold tracking-wide transition-transform hover:scale-105"
-                >
-                  Search
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </section>
+                              const whenISO = (b as any).pickupTime || (b as any).pickupDateTime;
+                              const hasWhen = Boolean(whenISO);
+                              const whenCell = hasWhen ? (
+                                <div className="flex flex-col text-gray-700 text-sm">
+                                  <span className="font-medium">{formatDate(whenISO)}</span>
+                                  <span className="flex items-center gap-1">
+                                    <Clock3 className="w-4 h-4 text-green-500" />
+                                    {formatTime(whenISO)}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              );
+
+                              const agentName = (b as any).agentName || (b as any).userName || "-";
+                              const agentNumber = (b as any).agentPhone || (b as any).userPhone || (b as any).phone || "-";
+                              const agentCell = confirmed ? (
+                                <div className="text-sm">
+                                  <div className="text-gray-800 font-medium">{agentName}</div>
+                                  <div className="text-gray-600">{agentNumber}</div>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              );
+
+                              return (
+                                <TableRow key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50 hover:bg-green-50/60"}>
+                                  <TableCell className="align-top">
+                                    <div className="font-semibold text-gray-800">{trip}</div>
+                                  </TableCell>
+                                  <TableCell className="hidden md:table-cell align-top">
+                                    <div className="text-gray-800 font-medium">{vehicle}</div>
+                                  </TableCell>
+                                  <TableCell className="hidden lg:table-cell align-top">
+                                    <div className="text-gray-700 text-sm" title={`${pickup}${drop && drop !== "-" ? ` → ${drop}` : ""}`}>
+                                      {pickup}
+                                      {drop && drop !== "-" ? <span className="mx-1">→ {drop}</span> : null}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="align-top">{whenCell}</TableCell>
+                                  <TableCell className="hidden md:table-cell align-top">{agentCell}</TableCell>
+                                  <TableCell className="text-right align-top">
+                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${badge}`}>
+                                      {b.status || "-"}
+                                    </span>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </section>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
