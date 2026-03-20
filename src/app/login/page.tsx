@@ -24,7 +24,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/Auth/login`, {
+      const res = await fetch(`${API_BASE_URL}/Auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -43,6 +43,10 @@ export default function LoginPage() {
           path: "/",
         });
         setCookie("role", data.profile.role, {
+          maxAge: 60 * 60 * 24,
+          path: "/",
+        });
+        setCookie("profileId", data.profile.id, {
           maxAge: 60 * 60 * 24,
           path: "/",
         });
@@ -159,7 +163,7 @@ export default function LoginPage() {
             <div className="text-center text-sm">
               Don&apos;t have an account?{" "}
               <Link
-                href="/signup"
+                href="/user-signup"
                 className="underline underline-offset-4 text-green-700 font-semibold"
               >
                 Sign up

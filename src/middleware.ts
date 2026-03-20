@@ -6,58 +6,45 @@ export function middleware(req: NextRequest) {
   const role = req.cookies.get("role")?.value;
   const { pathname } = req.nextUrl;
 
-  // ✅ Define public routes
-  const publicPaths = [
-    "/login",
+  // ── STEP 1: Always allow these paths — no logic, no redirect, ever ───
+  const alwaysAllow = [
     "/agent-signup",
     "/user-signup",
     "/forgot-password",
     "/reset-password",
     "/user/vehicles",
-    "/",
   ];
 
-  const isPublic = publicPaths.some(
-    (path) => pathname === path || pathname.startsWith(path + "/")
-  );
+  if (alwaysAllow.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+    return NextResponse.next(); // ← hard pass-through, nothing else runs
+  }
 
-  // 🚀 Debug log (optional)
-  console.log("PATHNAME:", pathname, "TOKEN:", token, "IS_PUBLIC:", isPublic);
-if(pathname=== "/agent-signup") {
-  console.log("AGENT SIGNUP PAGE");
-   return NextResponse.redirect(new URL("/agent-signup", req.url));
-}
-  // ✅ Allow public routes without token
-  if (!token && !isPublic) {
+  // ── STEP 2: Root "/" logic ────────────────────────────────────────────
+  if (pathname === "/") {
+    if (!token) return NextResponse.next(); // show landing page
+    if (role === "admin") return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+    if (role === "agent") return NextResponse.redirect(new URL("/agent/dashboard", req.url));
+    return NextResponse.next(); // regular user — show landing
+  }
+
+  // ── STEP 3: Login page ────────────────────────────────────────────────
+  if (pathname === "/login") {
+    if (!token) return NextResponse.next();
+    if (role === "admin") return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+    if (role === "agent") return NextResponse.redirect(new URL("/agent/dashboard", req.url));
+    return NextResponse.redirect(new URL("/user/dashboard", req.url));
+  }
+
+  // ── STEP 4: Protected routes — must have token ────────────────────────
+  if (!token) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // ✅ If logged in and visiting a public route → send to dashboard
-  if (token && isPublic) {
-    if (role === "admin") {
-      return NextResponse.redirect(new URL("/admin/dashboard", req.url));
-    }
-    if (role === "agent") {
-      return NextResponse.redirect(new URL("/agent/dashboard", req.url));
-    }
-  }
-
-  // ✅ If logged in and on root `/` → send to dashboard
-  if (pathname === "/" && token) {
-    if (role === "admin") {
-      return NextResponse.redirect(new URL("/admin/dashboard", req.url));
-    }
-    if (role === "agent") {
-      return NextResponse.redirect(new URL("/agent/dashboard", req.url));
-    }
-  }
-
-  // ✅ Role-based protection
+  // ── STEP 5: Role guards ───────────────────────────────────────────────
   if (pathname.startsWith("/admin") && role !== "admin") {
     return NextResponse.redirect(new URL("/login", req.url));
   }
-
-  if (pathname.startsWith("/agent") && role !== "agent") {
+  if (pathname.startsWith("/agent/") && role !== "agent") {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
@@ -65,5 +52,7 @@ if(pathname=== "/agent-signup") {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js)).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js)).*)",
+  ],
 };

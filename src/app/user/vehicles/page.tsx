@@ -177,7 +177,7 @@ export default function VehiclesPage() {
     } else if (vehicle.tripTypeName === "Airport") {
       price = vehicle.airportPrice ? `₹${vehicle.airportPrice}` : "-";
       minKm = "-";
-    } else if (vehicle.tripTypeName === "Outstation") {
+    } else if (vehicle.tripTypeName === "Out Station") {
       price = vehicle.outPerKmPrice ? `₹${vehicle.outPerKmPrice}` : "-";
       minKm = vehicle.outMinKm ? `${vehicle.outMinKm}` : "-";
     }
