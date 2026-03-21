@@ -27,7 +27,7 @@ export default function AgentBookingsPage() {
 
   // get agentId from cookies (like master pages)
   useEffect(() => {
-    const id = (getCookie("loginId") as string) || ""
+    const id = (getCookie("agentId") as string) || (getCookie("loginId") as string) || ""
     setAgentId(id)
   }, [])
 

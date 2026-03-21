@@ -51,7 +51,7 @@ import {
   updatePrice,
   deletePrice,
   PriceDetailsByTrip,
-  CreatePriceDTO,
+  CreatePriceDetailsByTrip,
 } from "@/services/prices/pricesService"
 import { getAgents, Agent } from "@/services/admin/agentsService"
 import { getVehiclesByAgent, Vehicle } from "@/services/admin/agentVehiclesService"
@@ -325,7 +325,7 @@ export default function VehiclePricePage() {
       return
     }
 
-    const payload: CreatePriceDTO = {
+    const payload: CreatePriceDetailsByTrip = {
       agentVehicleId:  parsed.data.agentVehicleId,
       tripTypeId:      parsed.data.tripTypeId,
       localPerKmPrice: parsed.data.localPerKmPrice || undefined,

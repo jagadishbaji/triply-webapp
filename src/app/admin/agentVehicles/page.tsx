@@ -47,6 +47,8 @@ import {
 
 import {
   Vehicle,
+  type CreateVehicleDTO,
+  type UpdateVehicleDTO,
   getAgents,
   getVehiclesByAgent,
   addAgentVehicle,

@@ -1,58 +1,23 @@
+import type { ColumnDef } from "@tanstack/react-table"
+import type { Vehicle } from "@/services/admin/agentVehiclesService"
 
-export type Vehicle = {
-   agentId: string
-   vehicletypeId: string
-  name: string
-  company: string
-  seatingCapacity: number   
-  id: string
-}
-
-export const columns= [
+export const columns: ColumnDef<Vehicle>[] = [
+  { accessorKey: "name",            header: "Vehicle Name" },
+  { accessorKey: "company",         header: "Brand" },
+  { accessorKey: "seatingCapacity", header: "Seats" },
   {
-    accessorKey: "name",
-    header: "Name",
+    accessorKey: "isActive",
+    header: "Status",
+    cell: ({ row }) => row.original.isActive
+      ? '<span class="text-green-600 font-semibold">Active</span>'
+      : '<span class="text-slate-400">Inactive</span>',
   },
-  {
-    accessorKey: "company",
-    header: "Company",
-  },
-  {
-    accessorKey: "seatingCapacity",
-    header: "Capacity",
-   
-  },  
   {
     accessorKey: "createdAt",
-    header: "Created At"
+    header: "Added",
+    cell: (info: any) => {
+      const d = new Date(info.getValue())
+      return isNaN(d.getTime()) ? "-" : d.toLocaleDateString("en-GB")
+    },
   },
-//   {
-//     id: "actions",
-//     header: "Actions",
-//     cell: ({ row }) => {
-//       const vehicle = row.original
-
-//       return (
-//         <DropdownMenu>
-//           <DropdownMenuTrigger asChild>
-//             <Button variant="ghost" className="h-8 w-8 p-0">
-//               <span className="sr-only">Open menu</span>
-//               <MoreHorizontal className="h-4 w-4" />
-//             </Button>
-//           </DropdownMenuTrigger>
-//           <DropdownMenuContent align="end">
-//             <DropdownMenuItem onClick={() => console.log("Edit", vehicle)}>
-//               Edit
-//             </DropdownMenuItem>
-//             <DropdownMenuItem
-//               className="text-red-600"
-//               onClick={() => console.log("Delete", vehicle)}
-//             >
-//               Delete
-//             </DropdownMenuItem>
-//           </DropdownMenuContent>
-//         </DropdownMenu>
-//       )
-//     },
-//   },
 ]

@@ -1,74 +1,67 @@
-import { apiFetch } from "@/lib/api"
-import { getCookie } from "cookies-next"
+import { apiFetch } from "@/lib/api";
 
-export type Agent = {
-  id: string
-  name: string
+export interface Agent {
+  id: string;
+  name: string;         // businessName from API, aliased as name for UI
+  businessName: string;
 }
 
-export type Vehicle = {
-  agentId: string
-  vehicleTypeId: string
-  name: string
-  company: string
-  seatingCapacity: number   
-  id:string
-}
-export type CreateVehicleDTO = {
-  agentId: string
-  vehicleTypeId: string
-  name: string
-  company: string
-  seatingCapacity: number
+export interface Vehicle {
+  id: string;
+  agentId: string;
+  vehicleTypeId: string;
+  name: string;
+  company: string;
+  seatingCapacity: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-// ✅ Get all agents
+export interface CreateVehicleDTO {
+  agentId: string;
+  vehicleTypeId: string;
+  name: string;
+  company: string;
+  seatingCapacity: number;
+}
+
+export interface UpdateVehicleDTO {
+  vehicleTypeId?: string;
+  name?: string;
+  company?: string;
+  seatingCapacity?: number;
+  isActive?: boolean;
+}
+
 export async function getAgents(): Promise<Agent[]> {
-  return apiFetch<Agent[]>("/api/agents", {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${getCookie("accessToken")}`, // token is passed here
-    },
-  })
+  const agents = await apiFetch<any[]>("/agents", { method: "GET" });
+  // Map businessName → name so existing UI dropdowns work unchanged
+  return agents.map((a) => ({
+    ...a,
+    name: a.businessName ?? a.name ?? "",
+  }));
 }
 
-// ✅ Get vehicles for agent
 export async function getVehiclesByAgent(agentId: string | null): Promise<Vehicle[]> {
-  return apiFetch<Vehicle[]>(`/api/agentVehicles/ByAgent/${agentId}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${getCookie("accessToken")}`,
-    },
-  })
+  if (!agentId) return [];
+  return apiFetch<Vehicle[]>(`/agentVehicles/ByAgent/${agentId}`, { method: "GET" });
 }
-  // ✅ Add new agent vehicle
-  export async function addAgentVehicle(payload: CreateVehicleDTO):Promise<Vehicle> {
-    return apiFetch("/api/agentVehicles", {
-      method: "POST",
-      headers: {      
-        Authorization: `Bearer ${getCookie("accessToken")}`,
-      },
-      body: JSON.stringify(payload),
-    })
-  }
-  
-  // ✅ Update agent vehicle
-  export async function updateAgentVehicle(id: string, agentVehicle: Partial<Vehicle>) {
-    return apiFetch(`/api/agentVehicles/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${getCookie("accessToken")}`,
-      },
-      body: JSON.stringify(agentVehicle),
-    })
-  }
-  
-  // ✅ Delete agent vehicle
-  export async function deleteAgentVehicle(id: string) {
-    return apiFetch(`/api/agentVehicles/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${getCookie("accessToken")}`,
-      },
-    })}
+
+export async function addAgentVehicle(payload: CreateVehicleDTO): Promise<Vehicle> {
+  return apiFetch<Vehicle>("/agentVehicles", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAgentVehicle(id: string, payload: UpdateVehicleDTO): Promise<Vehicle> {
+  return apiFetch<Vehicle>(`/agentVehicles/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAgentVehicle(id: string): Promise<void> {
+  return apiFetch(`/agentVehicles/${id}`, { method: "DELETE" });
+}

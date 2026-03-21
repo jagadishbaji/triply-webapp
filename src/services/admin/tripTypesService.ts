@@ -1,51 +1,32 @@
-// services/tripTypesService.ts
-import { apiFetch } from "@/lib/api"
-import { getCookie } from "cookies-next";
+import { apiFetch } from "@/lib/api";
 
 export interface tripType {
   id: string;
-  name: string;  
-
+  name: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-
-// ✅ Get all vehicle types
+// Public endpoint — no auth required
 export async function gettripTypes(): Promise<tripType[]> {
-  return apiFetch<tripType[]>("/api/tripTypes", { method: "GET", headers: {
-      Authorization: `Bearer ${getCookie("accessToken")}`, // <- is token passed here?
-    },})
-  
+  return apiFetch<tripType[]>("/TripTypes", { method: "GET" }, false);
 }
 
-// ✅ Add new vehicle type
-export async function addtripType(tripType: Omit<tripType, "id">) {
-  return apiFetch("/api/tripTypes", {
+export async function addtripType(payload: Omit<tripType, "id" | "createdAt" | "updatedAt">): Promise<tripType> {
+  return apiFetch<tripType>("/TripTypes", {
     method: "POST",
-    headers: {      
-      Authorization: `Bearer ${getCookie("accessToken")}`,
-    },
-    body: JSON.stringify(tripType),
-  })
+    body: JSON.stringify(payload),
+  });
 }
 
-// ✅ Update vehicle type
-export async function updatetripType(id: string, tripType: Partial<tripType>) {
-  return apiFetch(`/api/tripTypes/${id}`, {
+export async function updatetripType(id: string, payload: Partial<tripType>): Promise<tripType> {
+  return apiFetch<tripType>(`/TripTypes/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getCookie("accessToken")}`,
-    },
-    body: JSON.stringify(tripType),
-  })
+    body: JSON.stringify(payload),
+  });
 }
 
-// ✅ Delete vehicle type
-export async function deletetripType(id: string) {
-  return apiFetch(`/api/tripTypes/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${getCookie("accessToken")}`,
-    },
-  })
+export async function deletetripType(id: string): Promise<void> {
+  return apiFetch(`/TripTypes/${id}`, { method: "DELETE" });
 }

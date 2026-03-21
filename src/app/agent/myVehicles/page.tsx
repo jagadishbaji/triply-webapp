@@ -32,6 +32,8 @@ import { columns } from "./columns"
 // 👉 services
 import {
   Vehicle,
+  type CreateVehicleDTO,
+  type UpdateVehicleDTO,
   getVehiclesByAgent,
   addAgentVehicle,
   updateAgentVehicle,
@@ -76,8 +78,8 @@ export default function AgentVehiclesPage() {
   useEffect(() => {
     const cookieValue = document.cookie
       .split("; ")
-      .find((row) => row.startsWith("loginId="))
-      ?.split("=")[1]
+      .find((row) => row.startsWith("agentId=") || row.startsWith("loginId="))
+      ?.split("=")[1]  // agentId or loginId fallback
 
     if (cookieValue) {
       setAgentId(cookieValue)

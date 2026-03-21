@@ -38,13 +38,14 @@ import {
   createAgent,
   updateAgent,
   deleteAgent,
+  type CreateAgentPayload,
 } from "@/services/admin/agentsService"
 import { forgotPassword } from "@/services/authService"
 import type { ColumnDef } from "@tanstack/react-table"
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
 const addSchema = z.object({
-  name:          z.string().min(2, "Name must be at least 2 characters"),
+  businessName: z.string().min(2, "Business name must be at least 2 characters"),
   email:         z.string().email("Invalid email address"),
   phoneNumber:   z.string().regex(/^[6-9][0-9]{9}$/, "Enter a valid 10-digit mobile number"),
   address:       z.string().min(3, "Address is required"),
@@ -54,7 +55,7 @@ const addSchema = z.object({
 })
 
 const editSchema = z.object({
-  name:          z.string().min(2, "Name must be at least 2 characters"),
+  businessName: z.string().min(2, "Business name must be at least 2 characters"),
   email:         z.string().email("Invalid email address"),
   phoneNumber:   z.string().regex(/^[6-9][0-9]{9}$/, "Enter a valid 10-digit mobile number"),
   address:       z.string().min(3, "Address is required"),
@@ -181,7 +182,7 @@ export default function AgentsPage() {
   const openEdit = (agent: Agent) => {
     setSelected(agent)
     editForm.reset({
-      name:          agent.name,
+      name:          agent.businessName,
       email:         agent.email,
       phoneNumber:   agent.phoneNumber,
       address:       agent.address,
@@ -199,7 +200,18 @@ export default function AgentsPage() {
   const onAdd = async (data: AddForm) => {
     setSubmitting(true)
     try {
-      const newAgent = await createAgent({ ...data, password: data.password })
+      const newAgent = await createAgent({
+        email: data.email,
+        password: data.password,
+        agentData: {
+          businessName:  data.businessName,
+          ownerName:     data.ownerName,
+          phoneNumber:   data.phoneNumber,
+          address:       data.address,
+          licenseNumber: data.licenseNumber,
+          city:          "Hubli",
+        },
+      })
       setAgents((prev) => [...prev, newAgent])
       toast.success(`Agent "${data.name}" added successfully.`)
       closeDialog()
@@ -214,7 +226,13 @@ export default function AgentsPage() {
     if (!selected) return
     setSubmitting(true)
     try {
-      const updated = await updateAgent(selected.id, data)
+      const updated = await updateAgent(selected.id, {
+        businessName:  data.businessName,
+        ownerName:     data.ownerName,
+        phoneNumber:   data.phoneNumber,
+        address:       data.address,
+        licenseNumber: data.licenseNumber,
+      })
       setAgents((prev) => prev.map((a) => (a.id === selected.id ? updated : a)))
       toast.success(`Agent "${data.name}" updated successfully.`)
       closeDialog()

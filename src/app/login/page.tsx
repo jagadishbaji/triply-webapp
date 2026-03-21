@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { API_BASE_URL } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 import { setCookie } from "cookies-next";
 import Link from "next/link";
 import { Lock, Mail } from "lucide-react";
@@ -24,6 +25,7 @@ export default function LoginPage() {
     setError("");
 
     try {
+      // Step 1: Login
       const res = await fetch(`${API_BASE_URL}/Auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -31,46 +33,48 @@ export default function LoginPage() {
       });
 
       if (!res.ok) {
-        const errText = await res.json();
-        throw new Error(errText.msg || "Login failed");
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.message || err?.msg || "Login failed");
       }
 
       const data = await res.json();
 
-      if (data?.accessToken && data?.profile.role) {
-        setCookie("accessToken", data.accessToken, {
-          maxAge: 60 * 60 * 24,
-          path: "/",
-        });
-        setCookie("role", data.profile.role, {
-          maxAge: 60 * 60 * 24,
-          path: "/",
-        });
-        setCookie("profileId", data.profile.id, {
-          maxAge: 60 * 60 * 24,
-          path: "/",
-        });
-        setCookie("loginId", data?.user.id, {
-          maxAge: 60 * 60 * 24,
-          path: "/",
-        });
-        setCookie("loggedName", data?.profile.fullName, {
-          maxAge: 60 * 60 * 24,
-          path: "/",
-        });
-
-        if (data.profile.role === "admin") {
-          router.push("/admin/dashboard");
-        } else if (data.profile.role === "agent") {
-          router.push("/agent/dashboard");
-        } else {
-          router.push("/user/dashboard");
-        }
-      } else {
+      if (!data?.accessToken || !data?.profile?.role) {
         throw new Error("Invalid response from server");
       }
+
+      const cookieOpts = { maxAge: 60 * 60 * 24, path: "/" };
+      setCookie("accessToken", data.accessToken,      cookieOpts);
+      setCookie("role",        data.profile.role,     cookieOpts);
+      setCookie("profileId",   data.profile.id,       cookieOpts);
+      setCookie("loginId",     data.user?.id ?? data.profile.id, cookieOpts);
+      setCookie("loggedName",  data.profile.fullName, cookieOpts);
+
+      // Step 2: If agent — fetch their Agents.id and store it
+      // loginId = Profiles.id (auth user id). Agent pages need Agents.id.
+      if (data.profile.role === "agent") {
+        try {
+          const agentRes = await fetch(`${API_BASE_URL}/agents/me`, {
+            headers: { Authorization: `Bearer ${data.accessToken}` },
+          });
+          if (agentRes.ok) {
+            const agent = await agentRes.json();
+            setCookie("agentId", agent.id, cookieOpts);
+          }
+        } catch {
+          // Non-fatal — agent pages will fall back to loginId
+        }
+      }
+
+      // Step 3: Redirect
+      if (data.profile.role === "admin") {
+        router.push("/admin/dashboard");
+      } else if (data.profile.role === "agent") {
+        router.push("/agent/dashboard");
+      } else {
+        router.push("/user/dashboard");
+      }
     } catch (err: any) {
-      console.error("Login error:", err);
       setError(err.message || "Login failed");
     } finally {
       setLoading(false);
@@ -78,99 +82,67 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-100 via-white to-green-200 relative overflow-hidden">
-      {/* Decorative Blobs */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-green-200 rounded-full opacity-30 blur-3xl z-0" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-green-400 rounded-full opacity-20 blur-3xl z-0" />
-      <Card className="w-full max-w-md shadow-2xl border-0 rounded-3xl bg-white/90 backdrop-blur-lg relative z-10">
-        <CardHeader>
-          <div className="flex flex-col items-center text-center gap-2">
-            <span className="inline-flex items-center justify-center bg-gradient-to-br from-green-500 to-green-700 rounded-full w-16 h-16 shadow-lg mb-2">
-              <Lock className="w-8 h-8 text-white" />
-            </span>
-            <h1 className="text-3xl font-extrabold text-gray-900">
-              Welcome Back
-            </h1>
-            <p className="text-muted-foreground text-base">
-              Login to your{" "}
-              <span className="text-green-700 font-semibold">Triply Cars</span>{" "}
-              account
-            </p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 p-4">
+      <Card className="w-full max-w-md shadow-xl border-0">
+        <CardHeader className="pb-2 text-center">
+          <div className="w-12 h-12 bg-green-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <span className="text-white font-black text-lg">ನ</span>
           </div>
+          <h1 className="text-2xl font-black text-slate-900">Welcome back</h1>
+          <p className="text-slate-500 text-sm">Sign in to NammaCab</p>
         </CardHeader>
-        <form onSubmit={handleLogin}>
-          <CardContent className="space-y-5">
-            {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
-                {error}
-              </p>
-            )}
-            <div className="grid gap-3">
-              <Label
-                htmlFor="email"
-                className="text-green-700 font-semibold"
-              >
-                Email
-              </Label>
-              <div className="flex items-center bg-green-50 rounded-xl px-3">
-                <Mail className="w-5 h-5 text-green-400 mr-2" />
+        <CardContent className="pt-4">
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3">
+              {error}
+            </div>
+          )}
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email" className="text-sm font-semibold text-slate-700">Email</Label>
+              <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 h-12 focus-within:bg-white focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 transition-all">
+                <Mail className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="border-0 bg-transparent focus:ring-0 text-base"
+                  id="email" type="email" placeholder="you@example.com" required
+                  value={email} onChange={(e) => setEmail(e.target.value)}
+                  className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 placeholder:text-slate-400"
                 />
               </div>
             </div>
-            <div className="grid gap-3">
-              <div className="flex items-center">
-                <Label
-                  htmlFor="password"
-                  className="text-green-700 font-semibold"
-                >
-                  Password
-                </Label>
-                <Link
-                  href="/forgot-password"
-                  className="ml-auto text-sm underline-offset-2 hover:underline text-green-600"
-                >
-                  Forgot your password?
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-sm font-semibold text-slate-700">Password</Label>
+                <Link href="/forgot-password" className="text-xs text-green-600 hover:underline font-medium">
+                  Forgot password?
                 </Link>
               </div>
-              <div className="flex items-center bg-green-50 rounded-xl px-3">
-                <Lock className="w-5 h-5 text-green-400 mr-2" />
+              <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 h-12 focus-within:bg-white focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 transition-all">
+                <Lock className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
                 <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="border-0 bg-transparent focus:ring-0 text-base"
+                  id="password" type="password" placeholder="••••••••" required
+                  value={password} onChange={(e) => setPassword(e.target.value)}
+                  className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 placeholder:text-slate-400"
                 />
               </div>
             </div>
             <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-bold rounded-xl h-12 text-lg shadow-lg transition"
-              disabled={loading}
+              type="submit" disabled={loading}
+              className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl"
             >
-              {loading ? "Logging in..." : "Login"}
+              {loading ? "Signing in…" : "Sign in"}
             </Button>
-            <div className="text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <Link
-                href="/user-signup"
-                className="underline underline-offset-4 text-green-700 font-semibold"
-              >
-                Sign up
-              </Link>
-            </div>
-          </CardContent>
-        </form>
+          </form>
+          <div className="mt-6 text-center space-y-2 text-sm text-slate-500">
+            <p>
+              New customer?{" "}
+              <Link href="/user-signup" className="text-green-600 font-semibold hover:underline">Create account</Link>
+            </p>
+            <p>
+              Tours & Travels operator?{" "}
+              <Link href="/agent-signup" className="text-green-600 font-semibold hover:underline">Partner with us</Link>
+            </p>
+          </div>
+        </CardContent>
       </Card>
     </div>
   );

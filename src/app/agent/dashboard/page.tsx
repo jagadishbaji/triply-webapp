@@ -24,7 +24,7 @@ export default function AgentDashboardPage() {
   const [details, setDetails] = useState<AgentBooking | null>(null)
 
   useEffect(() => {
-    const id = (getCookie("loginId") as string) || ""
+    const id = (getCookie("agentId") as string) || (getCookie("loginId") as string) || ""
     setAgentId(id)
   }, [])
 

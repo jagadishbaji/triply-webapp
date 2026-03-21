@@ -1,0 +1,14 @@
+<svg viewBox="0 0 88 88" width="88" height="88" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="110%" y2="110%">
+      <stop offset="0%" stop-color="#16a34a"/>
+      <stop offset="100%" stop-color="#052e16"/>
+    </linearGradient>
+  </defs>
+  <rect width="88" height="88" rx="20" fill="url(#g)"/>
+  <rect width="88" height="44" rx="20" fill="white" opacity="0.05"/>
+  <text x="44" y="62" font-size="52" fill="white" text-anchor="middle"
+    font-family="'Noto Sans Kannada','Noto Serif Kannada','Mandali',serif"
+    font-weight="600">&#x0CA8;</text>
+  <circle cx="76" cy="14" r="6.5" fill="#4ade80"/>
+</svg>

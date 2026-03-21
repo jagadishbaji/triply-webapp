@@ -1,51 +1,44 @@
-// services/vehicleTypesService.ts
-import { apiFetch } from "@/lib/api"
-import { getCookie } from "cookies-next";
+import { apiFetch } from "@/lib/api";
 
 export interface vehicleType {
   id: string;
-  name: string;  
-
+  name: string;
+  displayName: string;
+  slug: string;
+  description?: string;
+  exampleVehicles?: string;
+  iconEmoji: string;
+  minSeats: number;
+  maxSeats: number;
+  typicalPriceMin?: number;
+  typicalPriceMax?: number;
+  sortOrder: number;
+  isActive: boolean;
+  isPopular: boolean;
+  badgeLabel?: string;
+  badgeColor?: string;
+  createdAt?: string;
 }
 
-
-// ✅ Get all vehicle types
+// Public endpoint — no auth required (homepage search needs this)
 export async function getVehicleTypes(): Promise<vehicleType[]> {
-  return apiFetch<vehicleType[]>("/api/VehicleTypes", { method: "GET", headers: {
-      Authorization: `Bearer ${getCookie("accessToken")}`, // <- is token passed here?
-    },})
-  
+  return apiFetch<vehicleType[]>("/VehicleTypes", { method: "GET" }, false);
 }
 
-// ✅ Add new vehicle type
-export async function addVehicleType(vehicleType: Omit<vehicleType, "id">) {
-  return apiFetch("/api/vehicleTypes", {
+export async function addVehicleType(payload: Omit<vehicleType, "id" | "createdAt">): Promise<vehicleType> {
+  return apiFetch<vehicleType>("/VehicleTypes", {
     method: "POST",
-    headers: {      
-      Authorization: `Bearer ${getCookie("accessToken")}`,
-    },
-    body: JSON.stringify(vehicleType),
-  })
+    body: JSON.stringify(payload),
+  });
 }
 
-// ✅ Update vehicle type
-export async function updateVehicleType(id: string, vehicleType: Partial<vehicleType>) {
-  return apiFetch(`/api/vehicleTypes/${id}`, {
+export async function updateVehicleType(id: string, payload: Partial<vehicleType>): Promise<vehicleType> {
+  return apiFetch<vehicleType>(`/VehicleTypes/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getCookie("accessToken")}`,
-    },
-    body: JSON.stringify(vehicleType),
-  })
+    body: JSON.stringify(payload),
+  });
 }
 
-// ✅ Delete vehicle type
-export async function deleteVehicleType(id: string) {
-  return apiFetch(`/api/vehicleTypes/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${getCookie("accessToken")}`,
-    },
-  })
+export async function deleteVehicleType(id: string): Promise<void> {
+  return apiFetch(`/VehicleTypes/${id}`, { method: "DELETE" });
 }

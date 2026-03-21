@@ -6,7 +6,7 @@ const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
-
+icons: { icon: "/nammacab-icon.svg" }
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],

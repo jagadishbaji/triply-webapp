@@ -1,148 +1,90 @@
-import { getCookie } from "cookies-next";
 import { apiFetch } from "@/lib/api";
 
-export interface BookingRequest {
-  userId: string;
+// ── Guest booking request — no login required ─────────────────────────────
+export interface GuestBookingRequest {
+  // Customer details
+  customerName:   string;
+  customerPhone:  string;
+  customerEmail?: string;
+  notes?:         string;
+  // Trip details
   agentVehicleId: string;
-  tripTypeId: string;
-  priceId: string;
+  tripTypeId:     string;
+  priceId:        string;
   pickupLocation: string;
-  dropLocation: string;
+  dropLocation?:  string;
   pickupDateTime: string;
+  // Optional if logged in
+  userId?:        string;
 }
 
 export interface BookingResponse {
-  bookingId?: string;
-  status?: string;
-  message: string;
+  id:              string;
+  bookingRef:      string;   // e.g. NC-A1B2C3
+  customerName:    string;
+  customerPhone:   string;
+  customerEmail?:  string;
+  status:          string;
+  pickupLocation:  string;
+  dropLocation?:   string;
+  pickupDateTime:  string;
+  agentName?:      string;
+  agentPhone?:     string;
 }
 
-/**
- * Creates a new booking
- */
-export const createBooking = async (
-  bookingData: BookingRequest,
-  token?: string
-): Promise<BookingResponse> => {
-  const apiBase = process.env.NEXT_PUBLIC_API_URL;
-
-  // ✅ Prefer passed token, else read from cookies
-  const authToken = token || (getCookie("accessToken") as string);
-
-  if (!authToken) {
-    throw new Error("Authentication token missing. Please login again.");
-  }
-
-  try {
-    const response = await fetch(`${apiBase}/bookings`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify(bookingData),
-    });
-
-    const responseText = await response.text();
-
-    if (!response.ok) {
-      // Try to parse error JSON
-      try {
-        const errorData = JSON.parse(responseText);
-        throw new Error(errorData.message || "Failed to create booking");
-      } catch {
-        // If backend returned non-JSON (HTML, etc.)
-        console.error("Non-JSON error response:", responseText.substring(0, 200));
-        throw new Error(
-          `Server error (${response.status}): Please try again later.`
-        );
-      }
-    }
-
-    // ✅ Parse success JSON safely
-    try {
-      const result = JSON.parse(responseText);
-      return result;
-    } catch (parseError) {
-      console.error("Error parsing booking response:", parseError);
-      throw new Error("Invalid response format from server.");
-    }
-  } catch (error: any) {
-    console.error("Error creating booking:", error);
-    throw new Error(error.message || "Failed to create booking.");
-  }
-};
-
-// ==================== List current user's bookings ====================
-export interface MyBooking {
-  id?: string;
-  bookingId?: string;
-  status?: string;
-  pickupLocation?: string;
-  dropLocation?: string;
-  pickupDateTime?: string;
-  tripTypeName?: string;
-  agentVehicleName?: string;
-  vehicleName?: string;
-  createdAt?: string;
-  [key: string]: any;
+export interface BookingDetail extends BookingResponse {
+  bookingId?:      string;
+  bookingRef:      string;
+  tripTypeName?:   string;
+  vehicleName?:    string;
+  agentName:       string;
+  agentPhone?:     string;
+  seatingCapacity?: number;
+  createdAt?:      string;
+  updatedAt?:      string;
+  notes?:          string;
 }
 
-export async function myBookings(): Promise<MyBooking[]> {
-  return apiFetch<MyBooking[]>("/api/bookings/my", {
+export type BookingStatus =
+  | "pending" | "confirmed" | "in_progress" | "completed" | "cancelled";
+
+// ── API calls ─────────────────────────────────────────────────────────────
+
+// Public — no auth required
+export async function createBooking(data: GuestBookingRequest): Promise<BookingResponse> {
+  return apiFetch<BookingResponse>("/bookings", {
+    method: "POST",
+    body:   JSON.stringify(data),
+  }, false); // requiresAuth = false
+}
+
+// Public — track by booking ref (no login needed)
+export async function trackBooking(bookingRef: string): Promise<BookingDetail> {
+  return apiFetch<BookingDetail>(`/bookings/track/${bookingRef}`, {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${getCookie("accessToken")}`,
-    },
-  });
+  }, false);
 }
 
-// ==================== Agent bookings and updates ====================
-export interface AgentBooking extends MyBooking {
-  userName?: string;
-  phone?: string;
+// Agent/admin only
+export async function getBookingsByAgent(agentId: string): Promise<BookingDetail[]> {
+  return apiFetch<BookingDetail[]>(`/Bookings/bookingsbyagent/${agentId}`, { method: "GET" });
 }
 
-export async function getBookingsByAgent(agentId: string): Promise<AgentBooking[]> {
-  return apiFetch<AgentBooking[]>(`/api/Bookings/bookingsbyagent/${agentId}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${getCookie("accessToken")}`,
-    },
-  });
+export async function getBookingById(id: string): Promise<BookingDetail> {
+  return apiFetch<BookingDetail>(`/Bookings/${id}`, { method: "GET" });
 }
 
-export type BookingStatus = "pending" | "confirmed" | "ongoing" | "completed" | "cancelled" | "accept" | "reject";
-
-export async function updateBookingStatus(id: string, status: BookingStatus): Promise<any> {
-  // Map legacy actions to accepted statuses
-  const map: Record<string, BookingStatus> = {
-    accept: "confirmed",
-    reject: "cancelled",
-  } as const;
-
-  const finalStatus = (map[status] as BookingStatus) || status;
-  const allowed: BookingStatus[] = ["pending", "confirmed", "ongoing", "completed", "cancelled"];
-  if (!allowed.includes(finalStatus)) {
-    throw new Error(`Invalid status '${status}'. Allowed: ${allowed.join(", ")}`);
-  }
-
-  return apiFetch(`/api/Bookings/${id}`, {
+export async function updateBookingStatus(
+  id: string,
+  status: BookingStatus | "accept" | "reject"
+): Promise<BookingResponse> {
+  const map: Record<string, BookingStatus> = { accept: "confirmed", reject: "cancelled" };
+  const final: BookingStatus = (map[status] as BookingStatus) ?? (status as BookingStatus);
+  return apiFetch<BookingResponse>(`/Bookings/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getCookie("accessToken")}`,
-    },
-    body: JSON.stringify({ status: finalStatus }),
+    body:   JSON.stringify({ status: final }),
   });
 }
 
-// Get a single booking by ID (for details modal)
-export async function getBookingById(id: string): Promise<AgentBooking> {
-  return apiFetch<AgentBooking>(`/api/Bookings/${id}`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${getCookie("accessToken")}`,
-    },
-  });
-}
+// Legacy alias kept for agent pages
+export const myBookings = () => getBookingsByAgent(""); // not used in guest flow

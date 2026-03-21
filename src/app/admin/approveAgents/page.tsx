@@ -38,6 +38,8 @@ import {
 import {
   Agent,
   getInActiveAgents,
+  approveAgent,
+  rejectAgent,
   updateAgentStatus,
 } from "@/services/admin/agentsService";
 
@@ -143,7 +145,7 @@ export default function ApproveAgentsPage() {
     if (!selected) return;
     setSubmitting(true);
     try {
-      await updateAgentStatus(selected.id, true);
+      await approveAgent(selected.id);
       removeAgent(selected.id);
       toast.success(`${selected.name} has been approved and can now log in.`);
       closeDialog();
@@ -159,7 +161,7 @@ export default function ApproveAgentsPage() {
     if (!selected) return;
     setSubmitting(true);
     try {
-      await updateAgentStatus(selected.id, false);
+      await rejectAgent(selected.id, rejectReason || "Rejected by admin");
       removeAgent(selected.id);
       toast.success(`${selected.name}'s application has been rejected.`);
       closeDialog();
@@ -173,9 +175,9 @@ export default function ApproveAgentsPage() {
   // ── Inline reject (no dialog, direct from table row) ─────────────────
   const onQuickReject = async (agent: Agent) => {
     try {
-      await updateAgentStatus(agent.id, false);
+      await rejectAgent(agent.id, rejectReason || "Rejected by admin");
       removeAgent(agent.id);
-      toast.success(`${agent.name}'s application has been rejected.`);
+      toast.success(`${agent.businessName ?? agent.businessName ?? agent.name}'s application has been rejected.`);
     } catch {
       toast.error("Failed to reject agent.");
     }

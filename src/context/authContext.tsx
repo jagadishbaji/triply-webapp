@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(user);
 
       if (user) {
-        const { data } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+        const { data } = await supabase.from("Profiles").select("role").eq("id", user.id).single();
         setUserRole(data?.role || "");
       }
     };

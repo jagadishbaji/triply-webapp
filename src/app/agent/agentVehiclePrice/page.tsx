@@ -7,7 +7,7 @@ import {
   updatePrice,
   deletePrice,
   PriceDetailsByTrip,
-  CreatePriceDTO,
+  CreatePriceDetailsByTrip,
 } from "@/services/prices/pricesService"
 import { getVehiclesByAgent, Vehicle } from "@/services/admin/agentVehiclesService"
 import { gettripTypes, tripType } from "@/services/admin/tripTypesService"
@@ -42,7 +42,7 @@ export default function AgentVehiclePricePage() {
     outMinKm: "",
   })
 
-  const agentId = getCookie("loginId") as string
+  const agentId = (getCookie("agentId") as string) || (getCookie("loginId") as string) || ""
 
   useEffect(() => {
     async function fetchData() {
@@ -106,7 +106,7 @@ export default function AgentVehiclePricePage() {
   }
 
   async function handleSave() {
-    const numericForm: CreatePriceDTO = {
+    const numericForm: CreatePriceDetailsByTrip = {
       agentVehicleId: form.agentVehicleId,
       tripTypeId: form.tripTypeId,
       localPerKmPrice: Number(form.localPerKmPrice) || 0,

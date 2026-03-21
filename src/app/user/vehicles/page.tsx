@@ -1,686 +1,554 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Users, MapPin, Calendar, Repeat, Car, ArrowRight, Check, X, AlertCircle } from "lucide-react"
-import Link from "next/link"
-import { getCookie } from "cookies-next"
-
-import { getPricesByTripTypeId } from "@/services/prices/pricesService"
-import { gettripTypes } from "@/services/admin/tripTypesService"
-import { getVehicleTypes } from "@/services/admin/vehicleTypesService"
-import { logout } from "@/services/authService"
-import { createBooking, BookingRequest } from "@/services/bookingService"
-
-import { DotLottieReact } from "@lottiefiles/dotlottie-react"
+import { useEffect, useState, useCallback, Suspense } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { toast, Toaster } from "sonner"
+  MapPin, Calendar, Car, Users, ChevronRight, Shield,
+  ArrowRight, Loader2, AlertCircle, Search, X, Phone,
+  User, Mail, MessageSquare, CheckCircle2,
+} from "lucide-react"
+import Link from "next/link"
 
-import BookingSuccessModal from "@/components/bookingSuccessfull"
-import UserHeader from "@/components/user/UserHeader"
+import { Button } from "@/components/ui/button"
+import { Input }  from "@/components/ui/input"
+import { Label }  from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import Navbar from "@/components/navbar"
+import VehicleIllustration from "@/components/VehicleIllustration"
 
-interface VehiclePrice {
-  id: string
-  agentVehicleId: string
-  agentVehicleName: string
-  agentName: string
-  agentId: string
-  vehicleName: string
-  seatingCapacity: number
-  tripTypeName: string
-  localPerKmPrice?: number
-  localMinKm?: number
-  airportPrice?: number
-  outPerKmPrice?: number
-  outMinKm?: number
-  tripTypeId: string
-  vehicleTypeId: string
-  vehicleTypeName?: string
+import { getPricesByTripTypeId, PriceDetailsByTrip } from "@/services/prices/pricesService"
+import { gettripTypes }    from "@/services/admin/tripTypesService"
+import { getVehicleTypes, vehicleType } from "@/services/admin/vehicleTypesService"
+import { createBooking, GuestBookingRequest, BookingResponse } from "@/services/bookingService"
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function fmtPrice(v: PriceDetailsByTrip) {
+  const t = v.tripTypeName?.toLowerCase() ?? ""
+  if (t.includes("airport") && v.airportPrice)
+    return { label: `₹${v.airportPrice}`, sub: "fixed fare", isFixed: true }
+  if (t.includes("local") && v.localPerKmPrice)
+    return { label: `₹${v.localPerKmPrice}/km`, sub: `min ${v.localMinKm ?? "—"} km`, isFixed: false }
+  if (v.outPerKmPrice)
+    return { label: `₹${v.outPerKmPrice}/km`, sub: `min ${v.outMinKm ?? "—"} km`, isFixed: false }
+  return { label: "Contact operator", sub: "", isFixed: false }
 }
 
-export default function VehiclesPage() {
+function slugify(s: string) {
+  return (s ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "sedan"
+}
+
+// ── Skeleton ───────────────────────────────────────────────────────────────
+const SkeletonCard = () => (
+  <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden animate-pulse">
+    <div className="h-44 bg-slate-100"/>
+    <div className="p-4 space-y-3">
+      <div className="h-5 bg-slate-100 rounded w-2/3"/>
+      <div className="h-4 bg-slate-100 rounded w-1/2"/>
+      <div className="h-14 bg-slate-100 rounded-xl"/>
+      <div className="h-10 bg-slate-100 rounded-xl"/>
+    </div>
+  </div>
+)
+
+// ── Booking sheet ──────────────────────────────────────────────────────────
+interface BookingSheetProps {
+  vehicle:     PriceDetailsByTrip
+  pickup:      string
+  destination: string
+  date:        string
+  tripName:    string
+  onClose:     () => void
+  onDone:      (res: BookingResponse) => void
+}
+
+function BookingSheet({ vehicle, pickup, destination, date, tripName, onClose, onDone }: BookingSheetProps) {
+  const pr = fmtPrice(vehicle)
+
+  const [name,    setName]    = useState("")
+  const [phone,   setPhone]   = useState("")
+  const [email,   setEmail]   = useState("")
+  const [notes,   setNotes]   = useState("")
+  const [errors,  setErrors]  = useState<Record<string, string>>({})
+  const [step,    setStep]    = useState<"form" | "loading" | "done" | "error">("form")
+  const [errMsg,  setErrMsg]  = useState("")
+
+  const validate = () => {
+    const e: Record<string, string> = {}
+    if (!name.trim() || name.trim().length < 2)    e.name  = "Enter your full name"
+    if (!/^[6-9][0-9]{9}$/.test(phone.trim()))     e.phone = "Enter a valid 10-digit mobile number"
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Enter a valid email"
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
+
+  const handleSubmit = async () => {
+    if (!validate()) return
+    setStep("loading")
+    try {
+      const payload: GuestBookingRequest = {
+        customerName:   name.trim(),
+        customerPhone:  phone.trim(),
+        customerEmail:  email.trim() || undefined,
+        notes:          notes.trim() || undefined,
+        agentVehicleId: vehicle.agentVehicleId,
+        tripTypeId:     vehicle.tripTypeId,
+        priceId:        vehicle.id,
+        pickupLocation: pickup,
+        dropLocation:   destination || undefined,
+        pickupDateTime: new Date(date).toISOString(),
+      }
+      const res = await createBooking(payload)
+      setStep("done")
+      setTimeout(() => onDone(res), 1600)
+    } catch (e: any) {
+      setErrMsg(e?.message || "Something went wrong. Please try again.")
+      setStep("error")
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center"
+      onClick={step === "form" || step === "error" ? onClose : undefined}>
+
+      <motion.div
+        initial={{ y: 60, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 60, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 320, damping: 32 }}
+        className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col"
+        onClick={e => e.stopPropagation()}>
+
+        {/* Drag handle (mobile) */}
+        <div className="flex justify-center pt-3 sm:hidden flex-shrink-0">
+          <div className="w-10 h-1 bg-slate-200 rounded-full"/>
+        </div>
+
+        {step === "form" && (
+          <>
+            {/* Header */}
+            <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
+              <div>
+                <h2 className="text-lg font-black text-slate-900">Book your cab</h2>
+                <p className="text-xs text-slate-500 mt-0.5">No account needed — just your contact details</p>
+              </div>
+              <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 flex-shrink-0 ml-2">
+                <X className="w-4 h-4 text-slate-600"/>
+              </button>
+            </div>
+
+            {/* Scrollable content */}
+            <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+
+              {/* Trip summary strip */}
+              <div className="bg-slate-50 rounded-2xl p-4 flex gap-3 items-center">
+                <div className="w-20 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-white border border-slate-100">
+                  <VehicleIllustration slug={slugify(vehicle.vehicleName ?? "")} name={vehicle.vehicleName ?? ""}/>
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-slate-900 text-sm truncate">{vehicle.vehicleName}</div>
+                  <div className="text-xs text-slate-500">{vehicle.seatingCapacity} seats · {tripName}</div>
+                  <div className="text-green-700 font-black text-sm mt-0.5">{pr.label} <span className="text-slate-400 font-normal text-xs">{pr.sub}</span></div>
+                </div>
+              </div>
+
+              {/* Trip route */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-3.5 h-3.5 text-green-600"/>
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-400">Pickup</div>
+                    <div className="text-sm font-semibold text-slate-900">{pickup}</div>
+                  </div>
+                </div>
+                {destination && (
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400"/>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-400">Drop</div>
+                      <div className="text-sm font-semibold text-slate-900">{destination}</div>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-3.5 h-3.5 text-blue-500"/>
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-400">Date</div>
+                    <div className="text-sm font-semibold text-slate-900">
+                      {new Date(date).toLocaleDateString("en-IN", { weekday:"short", day:"numeric", month:"short", year:"numeric" })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100"/>
+
+              {/* Customer details form */}
+              <div className="space-y-4">
+                <p className="text-sm font-semibold text-slate-700">Your contact details</p>
+
+                {/* Name */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-600">Full Name *</Label>
+                  <div className={`flex items-center bg-slate-50 border rounded-xl px-3 h-11 transition-all focus-within:bg-white focus-within:ring-2 ${errors.name ? "border-red-400 focus-within:ring-red-100" : "border-slate-200 focus-within:border-green-500 focus-within:ring-green-100"}`}>
+                    <User className={`w-4 h-4 mr-2 flex-shrink-0 ${errors.name ? "text-red-400" : "text-green-500"}`}/>
+                    <Input value={name} onChange={e => { setName(e.target.value); setErrors(p => ({...p, name:""})) }}
+                      placeholder="Rajesh Kumar"
+                      className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 placeholder:text-slate-400"/>
+                  </div>
+                  {errors.name && <p className="text-xs text-red-600">{errors.name}</p>}
+                </div>
+
+                {/* Phone */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-600">Mobile Number *</Label>
+                  <div className={`flex items-center bg-slate-50 border rounded-xl px-3 h-11 transition-all focus-within:bg-white focus-within:ring-2 ${errors.phone ? "border-red-400 focus-within:ring-red-100" : "border-slate-200 focus-within:border-green-500 focus-within:ring-green-100"}`}>
+                    <Phone className={`w-4 h-4 mr-2 flex-shrink-0 ${errors.phone ? "text-red-400" : "text-green-500"}`}/>
+                    <Input value={phone} onChange={e => { setPhone(e.target.value.replace(/\D/g,"")); setErrors(p => ({...p, phone:""})) }}
+                      placeholder="9876543210" maxLength={10} inputMode="numeric"
+                      className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 placeholder:text-slate-400"/>
+                  </div>
+                  {errors.phone && <p className="text-xs text-red-600">{errors.phone}</p>}
+                </div>
+
+                {/* Email (optional) */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-600">Email <span className="text-slate-400 font-normal">(optional)</span></Label>
+                  <div className={`flex items-center bg-slate-50 border rounded-xl px-3 h-11 transition-all focus-within:bg-white focus-within:ring-2 ${errors.email ? "border-red-400 focus-within:ring-red-100" : "border-slate-200 focus-within:border-green-500 focus-within:ring-green-100"}`}>
+                    <Mail className={`w-4 h-4 mr-2 flex-shrink-0 ${errors.email ? "text-red-400" : "text-slate-400"}`}/>
+                    <Input value={email} onChange={e => { setEmail(e.target.value); setErrors(p => ({...p, email:""})) }}
+                      type="email" placeholder="you@example.com"
+                      className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 placeholder:text-slate-400"/>
+                  </div>
+                  {errors.email && <p className="text-xs text-red-600">{errors.email}</p>}
+                </div>
+
+                {/* Notes */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-600">Special Instructions <span className="text-slate-400 font-normal">(optional)</span></Label>
+                  <div className="flex items-start bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus-within:bg-white focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 transition-all">
+                    <MessageSquare className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0 mt-0.5"/>
+                    <textarea value={notes} onChange={e => setNotes(e.target.value)}
+                      placeholder="e.g. Need a/c, have luggage, early morning pickup…"
+                      rows={2}
+                      className="w-full bg-transparent text-sm focus:outline-none placeholder:text-slate-400 resize-none"/>
+                  </div>
+                </div>
+              </div>
+
+              {/* Disclaimer */}
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"/>
+                <p className="text-xs text-amber-700 leading-relaxed">
+                  The operator will call you on <strong>{phone || "your number"}</strong> within a short time to confirm the booking. Final fare may vary based on actual distance.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 flex-shrink-0">
+              <Button onClick={handleSubmit} className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg shadow-green-600/25 text-base">
+                Confirm Booking <ArrowRight className="ml-2 w-5 h-5"/>
+              </Button>
+              <p className="text-xs text-slate-400 text-center mt-2">No payment required now · Operator confirms via call</p>
+            </div>
+          </>
+        )}
+
+        {step === "loading" && (
+          <div className="flex flex-col items-center justify-center py-20 px-6">
+            <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-4">
+              <Loader2 className="w-8 h-8 text-green-600 animate-spin"/>
+            </div>
+            <p className="font-bold text-slate-900">Sending your request…</p>
+            <p className="text-sm text-slate-500 mt-1">Just a moment</p>
+          </div>
+        )}
+
+        {step === "done" && (
+          <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle2 className="w-10 h-10 text-green-600"/>
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-1">Request Sent!</h3>
+            <p className="text-sm text-slate-500">Redirecting to your booking confirmation…</p>
+          </div>
+        )}
+
+        {step === "error" && (
+          <>
+            <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <AlertCircle className="w-8 h-8 text-red-500"/>
+              </div>
+              <h3 className="text-lg font-black text-slate-900">Booking Failed</h3>
+              <p className="text-sm text-slate-500 mt-2 max-w-xs">{errMsg}</p>
+            </div>
+            <div className="px-6 pb-6 flex gap-3">
+              <Button variant="outline" onClick={onClose} className="flex-1 h-11 rounded-xl">Cancel</Button>
+              <Button onClick={() => setStep("form")} className="flex-1 h-11 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold">Try Again</Button>
+            </div>
+          </>
+        )}
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ── Main page ──────────────────────────────────────────────────────────────
+function VehiclesPageInner() {
   const searchParams = useSearchParams()
-  const router = useRouter()
-  const pathname = usePathname()
+  const router       = useRouter()
 
-  // State for filters
-  const [tripTypes, setTripTypes] = useState<any[]>([])
-  const [vehicleTypes, setVehicleTypes] = useState<any[]>([])
-  const [vehicles, setVehicles] = useState<VehiclePrice[]>([])
-  const [loading, setLoading] = useState(false);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState<VehiclePrice | null>(null);
-  const [isBooking, setIsBooking] = useState(false);
-  const [bookingSuccess, setBookingSuccess] = useState(false);
-  const [bookingError, setBookingError] = useState("");
+  const [tripTypes,    setTripTypes]    = useState<any[]>([])
+  const [vehicleTypes, setVehicleTypes] = useState<vehicleType[]>([])
+  const [results,      setResults]      = useState<PriceDetailsByTrip[]>([])
+  const [loading,      setLoading]      = useState(false)
+  const [searched,     setSearched]     = useState(false)
+  const [confirmItem,  setConfirmItem]  = useState<PriceDetailsByTrip | null>(null)
 
-  // Pre-fill from query string
-  const [tripTypeId, setTripTypeId] = useState(searchParams.get("tripTypeId") || "")
-  const [vehicleTypeId, setVehicleTypeId] = useState(searchParams.get("vehicleTypeId") || "")
-  const [pickup, setPickup] = useState(searchParams.get("pickup") || "")
-  const [destination, setDestination] = useState(searchParams.get("destination") || "")
-  const [date, setDate] = useState(searchParams.get("date") || "")
+  const [tripTypeId,   setTripTypeId]   = useState(searchParams.get("tripTypeId")    ?? "")
+  const [vehicleTypeId,setVehicleTypeId]= useState(searchParams.get("vehicleTypeId") ?? "")
+  const [pickup,       setPickup]       = useState(searchParams.get("pickup")        ?? "")
+  const [destination,  setDestination]  = useState(searchParams.get("destination")   ?? "")
+  const [date,         setDate]         = useState(searchParams.get("date")          ?? "")
 
-  // Auth state
-  const [accessToken, setAccessToken] = useState<string | null>(null)
-  const [loginId, setLoginId] = useState<string | null>(null)
-  const [loggedName, setLoggedName] = useState<string | null>(null)
-
-  // success modal
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const today = new Date().toISOString().split("T")[0]
 
   useEffect(() => {
-    setAccessToken((getCookie("accessToken") as string) || null)
-    setLoginId((getCookie("loginId") as string) || null)
-    setLoggedName((getCookie("loggedName") as string) || null)
+    Promise.all([gettripTypes(), getVehicleTypes()]).then(([t, v]) => {
+      setTripTypes(t ?? [])
+      setVehicleTypes(v ?? [])
+    }).catch(console.error)
   }, [])
 
-  useEffect(() => {
-    const fetchFilters = async () => {
-      try {
-        const trips = await gettripTypes()
-        setTripTypes(trips || [])
-        const vehicles = await getVehicleTypes()
-        setVehicleTypes(vehicles || [])
-      } catch (err) {
-        console.error("Failed to fetch trip/vehicle types:", err)
+  const tripName  = tripTypes.find(t => t.id === tripTypeId)?.name ?? ""
+  const isAirport = tripName.toLowerCase().includes("airport")
+
+  const doSearch = useCallback(async (ttId: string, vtId: string) => {
+    if (!ttId) return
+    setLoading(true); setSearched(true)
+    try {
+      let data = await getPricesByTripTypeId(ttId)
+      if (vtId) {
+        const nm = vehicleTypes.find(v => v.id === vtId)?.name?.toLowerCase() ?? ""
+        if (nm) data = data.filter(v =>
+          v.vehicleName?.toLowerCase().includes(nm) || v.agentVehicleName?.toLowerCase().includes(nm)
+        )
       }
-    }
-    fetchFilters()
-  }, [])
+      setResults(data)
+    } catch { setResults([]) }
+    finally { setLoading(false) }
+  }, [vehicleTypes])
 
   useEffect(() => {
-    const fetchVehicles = async () => {
-      if (!tripTypeId) return
-      setLoading(true)
-      try {
-        let data: VehiclePrice[] = await getPricesByTripTypeId(tripTypeId)
-        if (vehicleTypeId) {
-          data = data.filter(v => v.vehicleTypeId === vehicleTypeId)
-        }
-        setVehicles(data)
-      } catch (err) {
-        console.error("Failed to fetch vehicle prices:", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchVehicles()
-  }, [tripTypeId, vehicleTypeId])
+    if (tripTypeId) doSearch(tripTypeId, vehicleTypeId)
+  }, []) // eslint-disable-line
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!tripTypeId || !pickup || !date || !vehicleTypeId || (tripTypes.find(t => t.id === tripTypeId)?.name !== "Airport" && !destination)) {
-      alert("Please fill in all required fields.")
-      return
-    }
-
-    const query = new URLSearchParams({
-      tripTypeId,
-      vehicleTypeId,
-      pickup,
-      destination,
-      date
-    })
-
-    router.push(`${pathname}?${query.toString()}`)
+    if (!tripTypeId || !pickup || !date || (!isAirport && !destination)) return
+    doSearch(tripTypeId, vehicleTypeId)
+    const q = new URLSearchParams({ tripTypeId, vehicleTypeId, pickup, destination, date })
+    router.replace(`/user/vehicles?${q}`)
   }
 
-  const maskAgentName = (name: string) => {
-    if (!name) return "Agent: ****";
-    const [first, ...rest] = name.split(" ");
-    return `${first[0]}****${rest.length ? " " + rest.map(w => w[0] + "***").join(" ") : ""}`;
-  };
-
-  const maskPrice = () => "₹****";
-  const maskKm = () => "**";
-
-  const renderPriceDetails = (vehicle: VehiclePrice) => {
-    if (!accessToken) {
-      return (
-        <div className="flex flex-col items-start bg-green-50 border border-green-200 rounded-xl px-4 py-3 mb-2 w-full">
-          <span className="text-sm font-semibold text-gray-700 mb-1">Price</span>
-          <span className="text-lg font-bold text-green-700 mb-1">
-            {maskPrice()} <span className="text-base font-medium text-gray-700">/km</span>
-          </span>
-          <span className="text-base text-gray-700 font-semibold">
-            Min. {maskKm()} km
-          </span>
-          <span className="text-xs text-gray-500 mt-2 italic">
-            Sign in to unlock exclusive pricing and see full fare details.
-          </span>
-          <span className="text-xs text-gray-400 mt-1">
-            <strong>Note:</strong> Charges may vary. Please discuss with the agent for final pricing.
-          </span>
-        </div>
-      )
-    }
-
-    let price = "";
-    let minKm = "";
-    if (vehicle.tripTypeName === "Local") {
-      price = vehicle.localPerKmPrice ? `₹${vehicle.localPerKmPrice}` : "-";
-      minKm = vehicle.localMinKm ? `${vehicle.localMinKm}` : "-";
-    } else if (vehicle.tripTypeName === "Airport") {
-      price = vehicle.airportPrice ? `₹${vehicle.airportPrice}` : "-";
-      minKm = "-";
-    } else if (vehicle.tripTypeName === "Out Station") {
-      price = vehicle.outPerKmPrice ? `₹${vehicle.outPerKmPrice}` : "-";
-      minKm = vehicle.outMinKm ? `${vehicle.outMinKm}` : "-";
-    }
-    return (
-      <>
-        <div className="flex flex-col items-start bg-green-50 border border-green-200 rounded-xl px-4 py-3 mb-2 w-full">
-          <span className="text-sm font-semibold text-gray-700 mb-1">Price</span>
-          <span className="text-lg font-bold text-green-700 mb-1">
-            {price} <span className="text-base font-medium text-gray-700">{vehicle.tripTypeName === "Airport" ? "" : "/km"}</span>
-          </span>
-          {vehicle.tripTypeName !== "Airport" && (
-            <span className="text-base text-gray-700 font-semibold">
-              Minimum {minKm} km per booking
-            </span>
-          )}
-        </div>
-        <span className="text-xs text-gray-400 mt-1">
-          <strong>Note:</strong> Charges may vary. Please discuss with the agent for final pricing.
-        </span>
-      </>
-    )
+  const handleDone = (res: BookingResponse) => {
+    setConfirmItem(null)
+    router.push(`/booking/confirmation?ref=${res.bookingRef}&id=${res.id}`)
   }
-
-  const renderAgentName = (name: string) => {
-    if (!accessToken) {
-      return (
-        <>
-          <span className="font-medium text-gray-700">{maskAgentName(name)}</span>
-          <span className="text-xs text-gray-400 ml-2">Login to view agent</span>
-        </>
-      )
-    }
-    return <span className="font-medium text-gray-700">{name}</span>
-  }
-
-  const getVehicleImage = (agentVehicleName: string) => {
-    const normalized = agentVehicleName?.toLowerCase().replace(/\s+/g, "").trim() || ""
-    if (normalized.includes("mini")) return "/images/cars/sedan-car.jpg"
-    if (normalized.includes("hatchback")) return "/images/cars/sedan-car.jpg"
-    if (normalized.includes("sedan")) return "/images/cars/sedan-car.jpg"
-    if (normalized.includes("suv")) return "/images/cars/suv-car.png"
-    return "/images/cars/vehicle-placeholder.png"
-  }
-
-  // Use shared header like MyBookings
-  const onLogout = useCallback(async () => {
-    await logout();
-    router.push("/login");
-  }, [router]);
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-green-100 via-white to-green-200">
-      <Toaster />
-      <UserHeader onLogout={onLogout} title="Search Vehicles" />
+    <div className="min-h-screen bg-slate-50">
+      <Navbar/>
 
-      {/* SEARCH SECTION - matches landing */}
-      <section className="relative z-20 flex flex-col items-center pt-6">
-        <Card className="w-full max-w-7xl mx-auto rounded-[2.5rem] shadow-2xl border-0 bg-white/90 backdrop-blur-lg">
-          <CardContent className="p-0">
-            <form
-              onSubmit={handleSearch}
-              className="flex flex-col md:flex-row items-center gap-0 md:gap-4"
-              style={{
-                background:
-                  "linear-gradient(90deg, #e0ffe6 0%, #f8fafc 60%, #e0ffe6 100%)",
-                borderRadius: "2.5rem",
-                boxShadow: "0 8px 32px 0 rgba(34,197,94,0.10)",
-                padding: "1.5rem 1.5rem",
-                position: "relative",
-                top: "-2rem",
-                zIndex: 10,
-              }}
-            >
-              {/* Trip Type */}
-              <div className="flex flex-col flex-1 min-w-[180px] px-2">
-                <label className="mb-2 text-xs font-semibold text-green-700 tracking-widest uppercase">
-                  Trip Type
-                </label>
-                <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition w-full">
-                  <Repeat className="w-5 h-5 text-green-500 mr-2" />
-                  <Select value={tripTypeId} onValueChange={setTripTypeId} required>
-                    <SelectTrigger className="border-0 focus:ring-0 h-10 text-base bg-transparent font-medium w-full">
-                      <SelectValue placeholder="Choose" />
-                    </SelectTrigger>
-                    <SelectContent className="w-full min-w-[180px]">
-                      {tripTypes.map((trip) => (
-                        <SelectItem key={trip.id} value={trip.id} className="w-full">
-                          {trip.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+      {/* ── Search bar ─────────────────────────────────────────────────── */}
+      <div className="bg-white border-b border-slate-100 sticky top-0 z-20 shadow-sm pt-20">
+        <form onSubmit={handleSearch} className="max-w-7xl mx-auto px-4 py-3">
+          <div className="flex flex-wrap gap-2 items-end">
+            {/* Trip type pills */}
+            <div className="flex gap-1 mr-1">
+              {tripTypes.length === 0
+                ? [1,2,3].map(i=><div key={i} className="h-10 w-24 bg-slate-100 rounded-xl animate-pulse"/>)
+                : tripTypes.map(t=>(
+                  <button key={t.id} type="button" onClick={()=>setTripTypeId(t.id)}
+                    className={`h-10 px-4 rounded-xl text-sm font-semibold transition-all ${tripTypeId===t.id?"bg-green-600 text-white shadow-sm":"bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>
+                    {t.name}
+                  </button>
+                ))
+              }
+            </div>
+
+            <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 h-10 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 min-w-[150px] flex-1">
+              <MapPin className="w-4 h-4 text-green-500 mr-2 flex-shrink-0"/>
+              <Input value={pickup} onChange={e=>setPickup(e.target.value)} placeholder="Pickup" required
+                className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0"/>
+            </div>
+
+            {!isAirport && (
+              <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 h-10 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 min-w-[150px] flex-1">
+                <MapPin className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0"/>
+                <Input value={destination} onChange={e=>setDestination(e.target.value)} placeholder="Drop location"
+                  required={!isAirport} className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0"/>
               </div>
+            )}
 
-              {/* Pickup */}
-              <div className="flex flex-col flex-1 min-w-[180px] px-2">
-                <label className="mb-2 text-xs font-semibold text-green-700 tracking-widest uppercase">
-                  Pickup
-                </label>
-                <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition w-full">
-                  <MapPin className="w-5 h-5 text-green-400 mr-2" />
-                  <Input
-                    type="text"
-                    value={pickup}
-                    onChange={(e) => setPickup(e.target.value)}
-                    placeholder="Enter pickup location"
-                    required
-                    className="border-0 focus:ring-0 h-10 text-base bg-transparent font-medium"
-                  />
-                </div>
-              </div>
+            <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 h-10 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100">
+              <Calendar className="w-4 h-4 text-green-500 mr-2 flex-shrink-0"/>
+              <Input type="date" min={today} value={date} onChange={e=>setDate(e.target.value)} required
+                className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 w-32"/>
+            </div>
 
-              {/* Destination (hide if Airport) */}
-              {tripTypes.find((t) => t.id === tripTypeId)?.name !== "Airport" && (
-                <div className="flex flex-col flex-1 min-w-[180px] px-2">
-                  <label className="mb-2 text-xs font-semibold text-green-700 tracking-widest uppercase">
-                    Drop
-                  </label>
-                  <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition w-full">
-                    <MapPin className="w-5 h-5 text-green-400 mr-2" />
-                    <Input
-                      type="text"
-                      value={destination}
-                      onChange={(e) => setDestination(e.target.value)}
-                      placeholder="Destination"
-                      required
-                      className="border-0 focus:ring-0 h-10 text-base bg-transparent font-medium"
-                    />
-                  </div>
-                </div>
-              )}
+            <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 h-10 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 min-w-[140px]">
+              <Car className="w-4 h-4 text-green-500 mr-2 flex-shrink-0"/>
+              <Select value={vehicleTypeId} onValueChange={v => setVehicleTypeId(v === "all" ? "" : v)}>
+                <SelectTrigger className="border-0 bg-transparent p-0 h-auto text-sm focus:ring-0 shadow-none">
+                  <SelectValue placeholder="Any vehicle"/>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any vehicle</SelectItem>
+                  {vehicleTypes.map(v=><SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
 
-              {/* Date */}
-              <div className="flex flex-col flex-1 min-w-[180px] px-2">
-                <label className="mb-2 text-xs font-semibold text-green-700 tracking-widest uppercase">
-                  Date
-                </label>
-                <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition w-full">
-                  <Calendar className="w-5 h-5 text-green-400 mr-2" />
-                  <Input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    required
-                    className="border-0 focus:ring-0 h-10 text-base bg-transparent font-medium"
-                  />
-                </div>
-              </div>
-
-              {/* Vehicle Type */}
-              <div className="flex flex-col flex-1 min-w-[180px] px-2">
-                <label className="mb-2 text-xs font-semibold text-green-700 tracking-widest uppercase">
-                  Vehicle
-                </label>
-                <div className="flex items-center bg-white border-0 rounded-2xl px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-green-400 transition w-full">
-                  <Car className="w-5 h-5 text-green-500 mr-2" />
-                  <Select value={vehicleTypeId} onValueChange={setVehicleTypeId} required>
-                    <SelectTrigger className="border-0 focus:ring-0 h-10 text-base bg-transparent font-medium w-full">
-                      <SelectValue placeholder="Choose" />
-                    </SelectTrigger>
-                    <SelectContent className="w-full min-w-[180px]">
-                      {vehicleTypes.map((v) => (
-                        <SelectItem key={v.id} value={v.id} className="w-full">
-                          {v.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Search Button */}
-              <div className="flex flex-col flex-[0.7] min-w-[140px] px-2 mt-6 md:mt-0">
-                <Button
-                  type="submit"
-                  className="h-12 w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white text-base rounded-2xl shadow-lg font-bold tracking-wide transition-transform hover:scale-105"
-                >
-                  Search
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* Vehicles Heading */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="text-center mb-12 mt-6"
-      >
-        <h2 className="text-4xl font-bold text-gray-900 mb-3">Premium Fleet Selection</h2>
-        <div className="h-1.5 w-24 bg-gradient-to-r from-green-400 to-green-600 rounded-full mx-auto mb-4"></div>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Choose from our meticulously maintained vehicles tailored to your journey needs
-        </p>
-      </motion.div>
-
-      {/* Loading State */}
-      {loading && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center justify-center py-12"
-        >
-          <DotLottieReact
-            src="https://lottie.host/613a9cab-8f82-4d21-97b2-89a561b65f76/y1uXoMv7cP.lottie"
-            autoplay
-            loop
-            style={{ width: "250px", height: "250px" }}
-          />
-          <p className="text-xl font-medium text-gray-700 mt-6">
-            Finding the perfect vehicles for your journey...
-          </p>
-        </motion.div>
-      )}
-
-      {/* Empty State */}
-      {!loading && vehicles.length === 0 && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-16 bg-white/80 rounded-3xl shadow-lg max-w-4xl mx-auto"
-        >
-          <motion.div
-            className="md:w-1/2 flex justify-center mx-auto"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <DotLottieReact
-              src="https://lottie.host/613a9cab-8f82-4d21-97b2-89a561b65f76/y1uXoMv7cP.lottie"
-              loop
-              autoplay
-            />
-          </motion.div>
-          <p className="text-xl font-medium text-gray-700">No vehicles found for your search criteria</p>
-          <p className="text-gray-500 mt-3 max-w-lg mx-auto">Try adjusting your search parameters or contact our support team for personalized assistance.</p>
-        </motion.div>
-      )}
-
-      {/* Vehicle Cards */}
-      <div className="max-w-7xl mx-auto px-4 pb-20 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {vehicles.map((vehicle, index) => (
-          <motion.div
-            key={vehicle.id}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-          >
-            <Card
-              className="group shadow-xl rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-300 h-full flex flex-col"
-            >
-              <div className="relative">
-                <img
-                  src={getVehicleImage(vehicle.agentVehicleName || "")}
-                  alt={vehicle.agentVehicleName}
-                  className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute top-2 right-2 bg-green-600 text-white text-xs px-3 py-1 rounded-full shadow-md">
-                  {vehicle.tripTypeName}
-                </div>
-                <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1 shadow-md">
-                  <Users className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-semibold text-green-700">
-                    {vehicle.seatingCapacity}
-                  </span>
-                </div>
-              </div>
-              <CardContent className="flex flex-col gap-3 p-5 flex-grow">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="font-bold text-lg text-gray-800 group-hover:text-green-700 transition-colors">{vehicle.vehicleName}</h2>
-                </div>
-
-                {/* Agent Name */}
-                <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-                  <img
-                    src="/images/agent-avatar.png"
-                    alt="Agent"
-                    className="w-6 h-6 rounded-full border border-gray-200"
-                    onError={(e) => { (e.target as HTMLImageElement).src = "/images/avatar-placeholder.png" }}
-                  />
-                  {renderAgentName(vehicle.agentName)}
-                </div>
-
-                <div className="mb-2 flex-grow">{renderPriceDetails(vehicle)}</div>
-
-                <Button 
-                  className="mt-2 bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-medium w-full flex items-center justify-center gap-2 rounded-xl shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 group"
-                  onClick={() => {
-                    if (!accessToken) {
-                      router.push("/login?redirect=vehicles");
-                      return;
-                    }
-                    setSelectedVehicle(vehicle);
-                    setIsConfirmOpen(true);
-                  }}
-                >
-                  {accessToken ? (
-                    <span className="flex items-center justify-center">
-                      Book Now
-                      <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center">
-                      Login to Book
-                    </span>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
+            <Button type="submit" disabled={!tripTypeId||loading}
+              className="h-10 px-5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-sm">
+              <Search className="w-4 h-4 mr-1.5"/>Search
+            </Button>
+          </div>
+        </form>
       </div>
-      
-      {/* Booking Confirmation Modal */}
-      <AnimatePresence>
-        {isConfirmOpen && selectedVehicle && (
-          <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-            <DialogContent className="sm:max-w-xl md:max-w-2xl rounded-xl p-0 overflow-hidden">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.3 }}
-                className="p-6"
-              >
-                <DialogHeader className="pb-4 border-b border-gray-100">
-                  <DialogTitle className="text-2xl font-bold text-gray-800">Booking Review</DialogTitle>
-                  <DialogDescription className="text-gray-600 text-lg mt-2">
-                    Please confirm your booking details for {selectedVehicle.agentVehicleName}
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="mt-6 space-y-5">
-                  <div className="bg-gray-50 p-5 rounded-lg border border-gray-100">
-                    <h4 className="font-semibold text-gray-800 text-lg mb-3 flex items-center">
-                      <MapPin className="h-5 w-5 text-green-600 mr-2" />
-                      Trip Details
-                    </h4>
-                    <div className="grid md:grid-cols-2 gap-4 text-base">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-gray-600 font-medium">From:</span>
-                        <span className="font-semibold text-gray-800 text-lg">{pickup}</span>
-                      </div>
-                      {destination && (
-                        <div className="flex flex-col gap-1">
-                          <span className="text-gray-600 font-medium">To:</span>
-                          <span className="font-semibold text-gray-800 text-lg">{destination}</span>
+
+      {/* ── Results ────────────────────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+
+        {!searched && !loading && (
+          <div className="text-center py-24">
+            <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Car className="w-8 h-8 text-green-600"/>
+            </div>
+            <h2 className="text-xl font-black text-slate-900 mb-2">Find cabs in Hubli</h2>
+            <p className="text-slate-500 text-sm">Pick trip type, enter pickup and date above</p>
+          </div>
+        )}
+
+        {loading && (
+          <div>
+            <div className="flex items-center gap-2 mb-5">
+              <Loader2 className="w-4 h-4 text-green-600 animate-spin"/>
+              <span className="text-sm text-slate-600 font-medium">Finding available cabs…</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {Array.from({length:8}).map((_,i)=><SkeletonCard key={i}/>)}
+            </div>
+          </div>
+        )}
+
+        {searched && !loading && results.length === 0 && (
+          <div className="text-center py-20 bg-white rounded-2xl border border-slate-100">
+            <Car className="w-10 h-10 text-slate-300 mx-auto mb-3"/>
+            <h3 className="font-bold text-slate-900 mb-1">No cabs available</h3>
+            <p className="text-sm text-slate-500">Try a different trip type or vehicle category</p>
+          </div>
+        )}
+
+        {!loading && results.length > 0 && (
+          <>
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="font-black text-slate-900">{results.length} cab{results.length!==1?"s":""} available</h2>
+                <p className="text-xs text-slate-500 mt-0.5">{tripName} · {pickup}{destination?` → ${destination}`:""} · {date && new Date(date).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {results.map((v, i) => {
+                const pr = fmtPrice(v)
+                return (
+                  <motion.div key={v.id}
+                    initial={{ opacity:0, y:20 }}
+                    animate={{ opacity:1, y:0 }}
+                    transition={{ delay: i*0.05 }}>
+                    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-lg hover:border-green-200 hover:-translate-y-0.5 transition-all duration-300 flex flex-col group h-full">
+
+                      {/* Illustration */}
+                      <div className="relative h-44 bg-gradient-to-b from-slate-50 to-slate-100 overflow-hidden">
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-4/5 h-3 bg-black/8 blur-sm rounded-full"/>
+                        <div className="w-full h-full group-hover:scale-105 transition-transform duration-500">
+                          <VehicleIllustration slug={slugify(v.vehicleName??"")} name={v.vehicleName??""}/>
                         </div>
-                      )}
-                      <div className="flex flex-col gap-1">
-                        <span className="text-gray-600 font-medium">Date:</span>
-                        <span className="font-semibold text-gray-800 text-lg">{date}</span>
+                        <div className="absolute top-3 left-3 bg-green-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                          {v.tripTypeName}
+                        </div>
+                        <div className="absolute top-3 right-3 bg-white/90 border border-slate-200 text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+                          <Users className="w-3 h-3"/>{v.seatingCapacity}
+                        </div>
                       </div>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-gray-600 font-medium">Trip Type:</span>
-                        <span className="font-semibold text-gray-800 text-lg">{selectedVehicle.tripTypeName}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-5 rounded-lg border border-gray-100">
-                    <h4 className="font-semibold text-gray-800 text-lg mb-3 flex items-center">
-                      <Car className="h-5 w-5 text-green-600 mr-2" />
-                      Vehicle & Pricing
-                    </h4>
-                    <div className="space-y-4 text-base">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-gray-600 font-medium">Vehicle:</span>
-                        <span className="font-semibold text-gray-800 text-lg">{selectedVehicle.agentVehicleName}</span>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-gray-600 font-medium">Capacity:</span>
-                        <span className="font-semibold text-gray-800 text-lg">{selectedVehicle.seatingCapacity} persons</span>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-gray-600 font-medium">Price:</span>
-                        <span className="font-semibold text-gray-800 text-xl text-green-700">
-                          {selectedVehicle.tripTypeName === "Local" ? (
-                            <>₹{selectedVehicle.localPerKmPrice}/km <span className="text-gray-600 text-base">(Minimum {selectedVehicle.localMinKm} km)</span></>
-                          ) : selectedVehicle.tripTypeName === "Airport" ? (
-                            <>₹{selectedVehicle.airportPrice} <span className="text-gray-600 text-base">(Fixed Price)</span></>
-                          ) : (
-                            <>₹{selectedVehicle.outPerKmPrice}/km <span className="text-gray-600 text-base">(Minimum {selectedVehicle.outMinKm} km)</span></>
+
+                      <div className="p-4 flex flex-col flex-1 gap-3">
+                        <div>
+                          <h3 className="font-black text-slate-900 text-sm">{v.vehicleName}</h3>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-white text-xs font-black">{v.agentName?.[0]?.toUpperCase()??"A"}</span>
+                            </div>
+                            <span className="text-xs text-slate-500 truncate">{v.agentName}</span>
+                            <Shield className="w-3 h-3 text-green-500 ml-auto flex-shrink-0"/>
+                          </div>
+                        </div>
+
+                        {/* Price */}
+                        <div className="bg-green-50 border border-green-100 rounded-xl px-3 py-2.5 flex-1">
+                          <div className="text-xl font-black text-green-700">{pr.label}</div>
+                          {pr.sub && <div className="text-xs text-slate-500 mt-0.5">{pr.sub}</div>}
+                          {v.driverDayAllowance && (
+                            <div className="text-xs text-slate-400 mt-1">+ driver bata ₹{v.driverDayAllowance}/day</div>
                           )}
-                        </span>
+                        </div>
+
+                        <Button onClick={()=>setConfirmItem(v)}
+                          className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-sm shadow-sm">
+                          Book Now <ChevronRight className="ml-1 w-4 h-4"/>
+                        </Button>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="bg-green-50 p-5 rounded-lg border border-green-100">
-                    <h4 className="font-semibold text-gray-800 text-lg mb-3 flex items-center">
-                      <Check className="h-5 w-5 text-green-600 mr-2" />
-                      Booking Summary
-                    </h4>
-                    <p className="text-gray-700 mb-2">
-                      You're about to book a <span className="font-semibold">{selectedVehicle.agentVehicleName}</span> for your trip from <span className="font-semibold">{pickup}</span>{destination ? ` to ${destination}` : ''} on <span className="font-semibold">{date}</span>.
-                    </p>
-                    <p className="text-gray-700">
-                      Please click "Confirm Booking" to proceed with your reservation.
-                    </p>
-                  </div>
-                </div>
-                
-                {bookingError && (
-                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
-                    <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
-                    <p className="text-red-700 text-sm">{bookingError}</p>
-                  </div>
-                )}
-                
-                {bookingSuccess && (
-                  <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center mb-2">
-                      <Check className="h-6 w-6 text-green-500 mr-2" />
-                      <h3 className="font-semibold text-green-700">Booking Confirmed!</h3>
-                    </div>
-                    <p className="text-green-700 text-sm">
-                      Your booking has been successfully created. An agent will review your booking and contact you shortly.
-                    </p>
-                  </div>
-                )}
-                
-                <DialogFooter className="mt-8 flex gap-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsConfirmOpen(false)}
-                    className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 rounded-lg py-6 text-lg"
-                    disabled={isBooking}
-                  >
-                    <X className="mr-2 h-5 w-5" />
-                    Cancel
-                  </Button>
-                  <Button 
-                    className="flex-1 bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white rounded-lg py-6 text-lg"
-                    onClick={async () => {
-                      try {
-                        setIsBooking(true);
-                        setBookingError("");
-                        
-                        const userId = getCookie("loginId") as string;
-                        if (!userId) {
-                          throw new Error("User ID not found. Please log in again.");
-                        }
-                        
-                        const formattedDate = new Date(date).toISOString();
-                        
-                        const bookingData: BookingRequest = {
-                          userId,
-                          agentVehicleId: selectedVehicle.agentVehicleId,
-                          tripTypeId,
-                          priceId: selectedVehicle.id,
-                          pickupLocation: pickup,
-                          dropLocation: destination || "",
-                          pickupDateTime: formattedDate
-                        };
-                        
-                        const token = getCookie("accessToken") as string;
-                        
-                        await createBooking(bookingData, token);
-                        
-                        setBookingSuccess(true);
-                        setShowSuccessModal(true);
-                        
-                      } catch (error) {
-                        console.error("Booking error:", error);                        
-                        toast.error("failed to book")
-                      } finally {
-                        setIsBooking(false);
-                      }
-                    }}
-                    disabled={isBooking || bookingSuccess}
-                  >
-                    {isBooking ? (
-                      <span className="flex items-center justify-center">
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Processing...
-                      </span>
-                    ) : bookingSuccess ? (
-                      <span className="flex items-center justify-center">
-                        <Check className="mr-2 h-5 w-5" />
-                        Booking Confirmed
-                      </span>
-                    ) : (
-                      <>
-                        <Check className="mr-2 h-5 w-5" />
-                        Confirm Booking
-                      </>
-                    )}
-                  </Button>
-                </DialogFooter>
-              </motion.div>
-            </DialogContent>
-          </Dialog>
+                  </motion.div>
+                )
+              })}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ── Booking sheet ──────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {confirmItem && (
+          <BookingSheet
+            vehicle={confirmItem}
+            pickup={pickup}
+            destination={destination}
+            date={date}
+            tripName={tripName}
+            onClose={()=>setConfirmItem(null)}
+            onDone={handleDone}
+          />
         )}
       </AnimatePresence>
-      <BookingSuccessModal open={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
     </div>
   )
+}
+
+export default function VehiclesPage() {
+  return <Suspense><VehiclesPageInner/></Suspense>
 }

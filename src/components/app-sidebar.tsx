@@ -229,16 +229,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton asChild className="h-auto hover:bg-transparent active:bg-transparent">
               <Link href={dashboardUrl} onClick={closeMobile} className="flex items-center gap-3 py-1">
                 {/* Logo mark */}
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center flex-shrink-0 shadow-sm">
-                  <IconCar className="w-4 h-4 text-white" />
-                </div>
+                
                 <div className="flex flex-col leading-none">
-                  <span className="text-base font-black text-slate-900 tracking-tight">
-                    Triply Cars
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-medium mt-0.5">
+                  <img src="/nammacab-logo-compact.svg" alt="NammaCab" height={36} />
+                  {/* <span className="text-[10px] text-slate-400 font-medium mt-0.5">
                     {user.role === "admin" ? "Admin Portal" : "Agent Portal"}
-                  </span>
+                  </span> */}
                 </div>
               </Link>
             </SidebarMenuButton>

@@ -1,0 +1,16 @@
+<svg viewBox="0 0 260 52" width="260" height="52" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="110%" y2="110%">
+      <stop offset="0%" stop-color="#16a34a"/>
+      <stop offset="100%" stop-color="#052e16"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="52" height="52" rx="12" fill="url(#g)"/>
+  <text x="26" y="38" font-size="32" fill="white" text-anchor="middle"
+    font-family="'Noto Sans Kannada','Noto Serif Kannada','Mandali',serif"
+    font-weight="600">&#x0CA8;</text>
+  <circle cx="44" cy="9" r="4" fill="#4ade80"/>
+  <text x="68" y="34"
+    font-family="'Helvetica Neue','Arial Black',Arial,sans-serif"
+    font-size="25" font-weight="800" fill="#ffffff" letter-spacing="-1">nammaCab</text>
+</svg>

@@ -1,43 +1,16 @@
-import { ColumnDef } from "@tanstack/react-table"
-import { PriceDTO } from "@/services/prices/pricesService"
+import type { ColumnDef } from "@tanstack/react-table"
+import type { PriceDetailsByTrip } from "@/services/prices/pricesService"
 
-// Define columns for Vehicle Prices table
-export const columns: ColumnDef<PriceDTO>[] = [
-  {
-    accessorKey: "agentName",
-    header: "Agent",
-  },
-  {
-    accessorKey: "vehicleName",
-    header: "Vehicle",
-  },
-  {
-    accessorKey: "tripTypeName",
-    header: "Trip Type",
-  },
-  {
-    accessorKey: "localPerKmPrice",
-    header: "Local Per Km",
-    cell: ({ row }) => (row.original.localPerKmPrice ?? 0).toFixed(2),
-  },
-  {
-    accessorKey: "localMinKm",
-    header: "Local Min Km",
-    cell: ({ row }) => (row.original.localMinKm ?? 0).toFixed(2),
-  },
-  {
-    accessorKey: "airportPrice",
-    header: "Airport Price",
-    cell: ({ row }) => (row.original.airportPrice ?? 0).toFixed(2),
-  },
-  {
-    accessorKey: "outPerKmPrice",
-    header: "Outstation Per Km",
-    cell: ({ row }) => (row.original.outPerKmPrice ?? 0).toFixed(2),
-  },
-  {
-    accessorKey: "outMinKm",
-    header: "Outstation Min Km",
-    cell: ({ row }) => (row.original.outMinKm ?? 0).toFixed(2),
-  },
+const fmt = (v?: number) => v != null ? `₹${v.toFixed(2)}` : "—"
+
+export const columns: ColumnDef<PriceDetailsByTrip>[] = [
+  { accessorKey: "agentName",       header: "Agent" },
+  { accessorKey: "vehicleName",     header: "Vehicle" },
+  { accessorKey: "tripTypeName",    header: "Trip Type" },
+  { accessorKey: "localPerKmPrice", header: "Local/km",   cell: ({ row }) => fmt(row.original.localPerKmPrice) },
+  { accessorKey: "localMinKm",      header: "Min km",     cell: ({ row }) => row.original.localMinKm ?? "—" },
+  { accessorKey: "airportPrice",    header: "Airport",    cell: ({ row }) => fmt(row.original.airportPrice) },
+  { accessorKey: "outPerKmPrice",   header: "Out/km",     cell: ({ row }) => fmt(row.original.outPerKmPrice) },
+  { accessorKey: "outMinKm",        header: "Out min km", cell: ({ row }) => row.original.outMinKm ?? "—" },
+  { accessorKey: "tollIncluded",    header: "Tolls",      cell: ({ row }) => row.original.tollIncluded ? "Included" : "Extra" },
 ]
