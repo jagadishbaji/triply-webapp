@@ -33,7 +33,20 @@ function FadeIn({ children, delay = 0, className = "" }: {
     </motion.div>
   )
 }
+// ── Helpers ────────────────────────────────────────────────────────────────
 
+// This maps your database slugs to your uploaded filenames
+const CAR_IMAGE_MAP: Record<string, string> = {
+  "mini": "mini-nobg.png",
+  "sedan": "sedan-nobg.png",
+  "ertiga": "ertiga-nobg.png",
+  "innova": "innova-nobg.png",
+  "innova-crysta": "crysta-nobg.png",
+  "suv": "Scorpio-nobg.png",
+  "premium-suv": "Toyota-Innova--Crysta-MPV.png",
+  "tempo-traveller": "tt-nobg.png",
+  "coach-bus": "TT.jpg", // Fallback if coach bus image isn't separate yet
+}
 // ── Vehicle card colours by badge ──────────────────────────────────────────
 const BADGE_COLORS: Record<string, string> = {
   "Budget":       "bg-amber-500",
@@ -183,7 +196,7 @@ export default function LandingPage() {
                   </Button>
                 </a>
                 <a href="/agent-signup">
-                  <Button variant="outline" className="h-12 px-8 border-white/20 text-white hover:bg-white/10 rounded-xl text-base font-semibold">
+                  <Button variant="outline" className="h-12 px-8 border-white/20 text-black hover:bg-white/10 rounded-xl text-base font-semibold">
                     List Your Cabs
                   </Button>
                 </a>
@@ -346,92 +359,60 @@ export default function LandingPage() {
           </FadeIn>
 
           {fleetLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-              {Array.from({length: 8}).map((_, i) => (
-                <div key={i} className="rounded-2xl overflow-hidden border border-slate-100">
-                  <div className="h-44 bg-slate-100 animate-pulse"/>
-                  <div className="p-4 space-y-2">
-                    <div className="h-4 bg-slate-100 rounded animate-pulse w-2/3"/>
-                    <div className="h-3 bg-slate-100 rounded animate-pulse w-full"/>
-                    <div className="h-6 bg-slate-100 rounded animate-pulse w-1/3"/>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : fleetError || vehicleTypes.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-slate-500 mb-2">Unable to load vehicle types right now.</p>
-              <p className="text-slate-400 text-sm">Please check your API connection and try refreshing.</p>
-            </div>
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse">
+                {[1,2,3,4].map(i => <div key={i} className="h-64 bg-white rounded-3xl border border-slate-100 shadow-sm"/>)}
+             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {vehicleTypes.map((v, i) => {
-                const badgeClass = BADGE_COLORS[v.badgeLabel ?? ""] ?? "bg-green-600"
-                const priceClass = PRICE_COLORS[v.badgeLabel ?? ""] ?? "text-green-700 bg-green-50"
+                const imageName = CAR_IMAGE_MAP[v.slug] || "sedan.png";
                 return (
-                  <FadeIn key={v.id} delay={i * 0.05}>
-                    <div className="group relative bg-white border border-slate-100 rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-green-500/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col">
-
-                      {/* Badge */}
+                  <FadeIn key={v.id} delay={i * 0.05} className="h-full">
+                    <div className="group bg-white border border-slate-100 rounded-3xl p-5 hover:shadow-[0_20px_50px_-20px_rgba(0,0,0,0.1)] hover:border-slate-200 transition-all duration-500 cursor-pointer flex flex-col h-full relative">
+                      
+                      {/* Premium Badge */}
                       {v.badgeLabel && (
-                        <div className={`absolute top-3 left-3 z-10 ${badgeClass} text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm`}>
+                        <div className="absolute top-5 left-5 z-10 bg-slate-900 text-white text-[10px] uppercase tracking-widest font-black px-3 py-1.5 rounded-full shadow-md">
                           {v.badgeLabel}
                         </div>
                       )}
-                      {v.isPopular && !v.badgeLabel && (
-                        <div className="absolute top-3 right-3 z-10 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                          ★ Popular
-                        </div>
-                      )}
 
-                      {/* Vehicle illustration */}
-                      <div className="relative h-44 bg-gradient-to-b from-slate-50 to-slate-100 overflow-hidden flex items-end justify-center px-3 pb-2">
-                        {/* Road shadow */}
-                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-4/5 h-3 bg-black/8 blur-sm rounded-full"/>
-                        {/* Seat count chip */}
-                        <div className="absolute top-3 right-3 flex items-center gap-1 bg-white border border-slate-200 rounded-full px-2.5 py-0.5 text-xs font-semibold text-slate-600 shadow-sm z-10">
-                          <Users className="w-3 h-3"/>
-                          {(v.minSeats && v.maxSeats && v.minSeats !== v.maxSeats) ? `${v.minSeats}–${v.maxSeats}` : (v.maxSeats || 4)}
-                        </div>
-                        {/* SVG illustration */}
-                        <div className="w-full h-full transition-transform duration-500 group-hover:scale-105 group-hover:-translate-y-1">
-                          <VehicleIllustration
-                            slug={v.slug || v.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "sedan"}
-                            name={v.name || ""}
-                          />
-                        </div>
+                      {/* Image Area */}
+                      <div className="relative h-40 mt-6 mb-4 flex items-center justify-center">
+                        <div className="absolute bottom-2 w-4/5 h-4 bg-black/5 blur-[12px] rounded-[100%] group-hover:bg-black/10 transition-all duration-500" />
+                        <img 
+                          src={`/images/cars/${imageName}`} 
+                          alt={v.name}
+                          className="w-full h-full object-contain drop-shadow-2xl transition-transform duration-500 group-hover:scale-110 group-hover:-translate-y-2 relative z-10"
+                        />
                       </div>
 
                       {/* Info */}
-                      <div className="p-4 flex flex-col flex-1">
-                        <div className="mb-1">
-                          <h3 className="font-black text-slate-900 text-base leading-tight">{v.name}</h3>
-                          {v.displayName !== v.name && (
-                            <p className="text-xs text-slate-400 mt-0.5">{v.displayName}</p>
-                          )}
+                      <div className="mt-auto pt-4 border-t border-slate-50">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-black text-slate-900 text-xl tracking-tight leading-none">{v.name}</h3>
+                            <p className="text-[11px] font-semibold text-slate-400 mt-2 line-clamp-1">{v.exampleVehicles || "Best in class"}</p>
+                          </div>
+                          <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 rounded-lg px-2 py-1 text-xs font-bold text-slate-600">
+                            <Users className="w-3 h-3 text-slate-400"/>
+                            {v.maxSeats || 4}
+                          </div>
                         </div>
 
-                        {v.exampleVehicles ? (
-                          <p className="text-xs text-slate-500 mb-3 line-clamp-1">{v.exampleVehicles}</p>
-                        ) : null}
-
-                        {/* Price range */}
-                        {v.typicalPriceMin != null && v.typicalPriceMax != null && (
-                          <div className={`inline-flex items-center gap-1 self-start px-2.5 py-1 rounded-lg text-xs font-bold mb-3 ${priceClass}`}>
-                            ₹{v.typicalPriceMin}–{v.typicalPriceMax}/km
+                        <div className="flex items-end justify-between mt-6">
+                          <div>
+                            <div className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-0.5">Est. Rate</div>
+                            <div className="text-lg font-black text-slate-900">₹{v.typicalPriceMin || 12}–{v.typicalPriceMax || 15}<span className="text-xs text-slate-400">/km</span></div>
                           </div>
-                        )}
-
-                        <a href="#search" className="mt-auto">
-                          <Button variant="outline"
-                            className="w-full h-8 border-green-200 text-green-700 hover:bg-green-500 hover:text-white hover:border-green-500 rounded-xl text-xs font-semibold transition-all duration-200">
-                            Book Now
-                          </Button>
-                        </a>
+                          <a href="#search">
+                            <Button className="rounded-full w-10 h-10 p-0 bg-slate-900 text-white hover:bg-green-600 transition-colors shadow-none"><ArrowRight className="w-4 h-4"/></Button>
+                          </a>
+                        </div>
                       </div>
                     </div>
                   </FadeIn>
-                )
+                );
               })}
             </div>
           )}
@@ -554,7 +535,7 @@ export default function LandingPage() {
                 </Button>
               </a>
               <a href="/login">
-                <Button variant="outline" className="h-13 px-10 border-white/40 text-white hover:bg-white/10 font-semibold text-base rounded-xl">
+                <Button variant="outline" className="h-13 px-10 border-white/40 text-black hover:bg-white/10 font-semibold text-base rounded-xl">
                   Already Registered? Sign in
                 </Button>
               </a>

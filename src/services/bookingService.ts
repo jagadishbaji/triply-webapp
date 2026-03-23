@@ -33,16 +33,38 @@ export interface BookingResponse {
 }
 
 export interface BookingDetail extends BookingResponse {
-  bookingId?:      string;
-  bookingRef:      string;
-  tripTypeName?:   string;
-  vehicleName?:    string;
-  agentName:       string;
-  agentPhone?:     string;
-  seatingCapacity?: number;
-  createdAt?:      string;
-  updatedAt?:      string;
-  notes?:          string;
+ bookingId: string;
+  bookingRef: string;
+  userId?: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  notes?: string;
+  agentVehicleId: string;
+  tripTypeId: string;
+  priceId: string;
+  pickupLocation: string;
+  dropoffLocation: string;
+  pickupTime: string; 
+  status: string;
+  finalPrice?: number;
+  createdAt: string;
+  updatedAt: string;
+  
+  // Agent Details
+  agentId: string;
+  agentName: string;
+  agentEmail: string;
+  agentPhone: string;
+  
+  // Vehicle Details
+  vehicleName: string;
+  vehicleCompany: string;
+  seatingCapacity: number;
+  vehicleType: string;
+  
+  // Trip & Pricing
+  tripTypeName: string;
 }
 
 export type BookingStatus =

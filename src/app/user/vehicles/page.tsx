@@ -23,6 +23,18 @@ import { getVehicleTypes, vehicleType } from "@/services/admin/vehicleTypesServi
 import { createBooking, GuestBookingRequest, BookingResponse } from "@/services/bookingService"
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+// This maps your database slugs to your uploaded filenames
+const CAR_IMAGE_MAP: Record<string, string> = {
+  "mini": "mini-nobg.png",
+  "sedan": "sedan-nobg.png",
+  "ertiga": "ertiga-nobg.png",
+  "innova": "innova-nobg.png",
+  "innova-crysta": "crysta-nobg.png",
+  "suv": "Scorpio-nobg.png",
+  "premium-suv": "Toyota-Innova--Crysta-MPV.png",
+  "tempo-traveller": "tt-nobg.png",
+  "coach-bus": "TT.jpg", // Fallback if coach bus image isn't separate yet
+}
 function fmtPrice(v: PriceDetailsByTrip) {
   const t = v.tripTypeName?.toLowerCase() ?? ""
   if (t.includes("airport") && v.airportPrice)
@@ -33,7 +45,10 @@ function fmtPrice(v: PriceDetailsByTrip) {
     return { label: `₹${v.outPerKmPrice}/km`, sub: `min ${v.outMinKm ?? "—"} km`, isFixed: false }
   return { label: "Contact operator", sub: "", isFixed: false }
 }
-
+function getCarImage(slug: string) {
+  const fileName = CAR_IMAGE_MAP[slug] || "sedan.png";
+  return `/images/cars/${fileName}`;
+}
 function slugify(s: string) {
   return (s ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "sedan"
 }
@@ -147,7 +162,11 @@ function BookingSheet({ vehicle, pickup, destination, date, tripName, onClose, o
               {/* Trip summary strip */}
               <div className="bg-slate-50 rounded-2xl p-4 flex gap-3 items-center">
                 <div className="w-20 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-white border border-slate-100">
-                  <VehicleIllustration slug={slugify(vehicle.vehicleName ?? "")} name={vehicle.vehicleName ?? ""}/>
+                   <img src={getCarImage(vehicle.vehicleName?.toLowerCase() || "sedan")} className="w-20 h-12 object-contain" alt=""/>
+              <div>
+                <div className="font-bold text-slate-900">{vehicle.vehicleName}</div>
+                <div className="text-xs font-bold text-green-700 uppercase tracking-widest">{pr.label} {pr.sub}</div>
+              </div>
                 </div>
                 <div className="min-w-0">
                   <div className="font-bold text-slate-900 text-sm truncate">{vehicle.vehicleName}</div>
@@ -370,8 +389,8 @@ function VehiclesPageInner() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar/>
-
+      {/* <Navbar/> */}
+<header className="bg-slate-950/95 backdrop-blur-md shadow-md"></header>
       {/* ── Search bar ─────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-slate-100 sticky top-0 z-20 shadow-sm pt-20">
         <form onSubmit={handleSearch} className="max-w-7xl mx-auto px-4 py-3">
@@ -475,6 +494,7 @@ function VehiclesPageInner() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {results.map((v, i) => {
                 const pr = fmtPrice(v)
+                const carImage = getCarImage(v.vehicleName?.toLowerCase().replace(/ /g, "-") || "sedan");
                 return (
                   <motion.div key={v.id}
                     initial={{ opacity:0, y:20 }}
@@ -486,7 +506,8 @@ function VehiclesPageInner() {
                       <div className="relative h-44 bg-gradient-to-b from-slate-50 to-slate-100 overflow-hidden">
                         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-4/5 h-3 bg-black/8 blur-sm rounded-full"/>
                         <div className="w-full h-full group-hover:scale-105 transition-transform duration-500">
-                          <VehicleIllustration slug={slugify(v.vehicleName??"")} name={v.vehicleName??""}/>
+                          <img src={carImage} alt={v.vehicleName} className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110 group-hover:-translate-y-2 relative z-10"/>
+                  
                         </div>
                         <div className="absolute top-3 left-3 bg-green-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">
                           {v.tripTypeName}

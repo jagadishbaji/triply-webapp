@@ -37,7 +37,7 @@ export function middleware(req: NextRequest) {
 
   // ── STEP 4: Protected routes — must have token ────────────────────────
   if (!token) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
   // ── STEP 5: Role guards ───────────────────────────────────────────────
