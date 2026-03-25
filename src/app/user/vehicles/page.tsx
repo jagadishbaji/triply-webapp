@@ -360,9 +360,9 @@ function VehiclesPageInner() {
     try {
       let data = await getPricesByTripTypeId(ttId)
       if (vtId) {
-        const nm = vehicleTypes.find(v => v.id === vtId)?.name?.toLowerCase() ?? ""
+        const nm = vehicleTypes.find(v => v.id === vtId)?.id?.toLowerCase() ?? ""
         if (nm) data = data.filter(v =>
-          v.vehicleName?.toLowerCase().includes(nm) || v.agentVehicleName?.toLowerCase().includes(nm)
+          v.id?.toLowerCase().includes(nm) || v.vehicleTypeId?.toLowerCase().includes(nm)
         )
       }
       setResults(data)
@@ -389,10 +389,97 @@ function VehiclesPageInner() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* <Navbar/> */}
-<header className="bg-slate-950/95 backdrop-blur-md shadow-md"></header>
+     {/* ── Header ─────────────────────────────────────────────────────── */}
+      <header className="bg-slate-900 text-white fixed w-full z-50">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          {/* Logo */}
+          <a href="/" className="flex items-center gap-2.5 group flex-shrink-0">
+            <div className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-600/30">
+              <span className="text-white font-black text-lg leading-none" style={{fontFamily:"'Noto Sans Kannada',sans-serif"}}>ನ</span>
+            </div>
+            <div className="leading-none">
+              <span className="font-black text-xl text-white tracking-tight">namma</span>
+              <span className="font-black text-xl text-green-400 tracking-widest uppercase">CAB</span>
+            </div>
+          </a>
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex gap-8 font-semibold text-sm">
+            <a href="#search" className="text-slate-300 hover:text-green-400 transition-colors">Book a Ride</a>
+            <a href="#how-it-works" className="text-slate-300 hover:text-green-400 transition-colors">How it Works</a>
+            <a href="#fleet" className="text-slate-300 hover:text-green-400 transition-colors">Our Fleet</a>
+            <a href="#partner" className="text-slate-300 hover:text-green-400 transition-colors">List Your Cabs</a>
+          </nav>
+
+          {/* Desktop auth */}
+          <div className="hidden md:flex gap-3 items-center">
+            <Button className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full px-5 font-semibold text-sm bg-transparent">
+              Sign in
+            </Button>
+            <Button className="bg-green-600 hover:bg-green-500 text-white rounded-full px-6 font-bold text-sm shadow-lg shadow-green-600/30">
+              Partner with us
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Hero Banner ────────────────────────────────────────────────── */}
+      <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pt-16 relative overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-20 -right-20 w-60 h-60 bg-green-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-green-600/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 py-8 md:py-10 relative z-10">
+          <div className="text-center max-w-3xl mx-auto">
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-full px-3 py-1.5 mb-4"
+            >
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+              <span className="text-green-400 text-xs font-semibold">Hubli's First Cab Marketplace</span>
+            </motion.div>
+
+            {/* Main heading */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-2xl md:text-3xl lg:text-4xl font-black text-white mb-3 leading-tight"
+            >
+              Find & Book Cabs{" "}
+              <span className="text-green-400">Across Hubli-Dharwad</span>
+            </motion.h1>
+
+            {/* Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="text-sm md:text-base text-slate-400 max-w-xl mx-auto"
+            >
+              Compare prices from 50+ operators. Book sedans, SUVs & more for local, outstation & airport trips.
+            </motion.p>
+
+            
+          </div>
+        </div>
+
+        {/* Wave separator - smaller */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
+            <path d="M0 20L48 18C96 16 192 12 288 11C384 10 480 12 576 15C672 18 768 22 864 23C960 24 1056 22 1152 19C1248 16 1344 12 1392 10L1440 8V40H0V20Z" fill="#f8fafc"/>
+          </svg>
+        </div>
+      </section>
+
+
       {/* ── Search bar ─────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-slate-100 sticky top-0 z-20 shadow-sm pt-20">
+      <div className="bg-white border-b border-slate-100 sticky top-16 z-20 shadow-sm">
         <form onSubmit={handleSearch} className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex flex-wrap gap-2 items-end">
             {/* Trip type pills */}
@@ -566,6 +653,69 @@ function VehiclesPageInner() {
           />
         )}
       </AnimatePresence>
+
+       {/* ════════════════════════════════════════════════════════════════════
+                FOOTER
+            ════════════════════════════════════════════════════════════════════ */}
+            <footer className="bg-slate-950 text-slate-400">
+              <div className="max-w-7xl mx-auto px-6 py-16">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+      
+                  {/* Brand */}
+                  <div className="md:col-span-2">
+                    <div className="flex items-center gap-2.5 mb-4">
+                      <div className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center">
+                        <span className="text-white font-black text-lg" style={{fontFamily:"'Noto Sans Kannada',sans-serif"}}>ನ</span>
+                      </div>
+                      <div className="leading-none">
+                        <span className="font-black text-xl text-white">namma</span>
+                        <span className="font-black text-xl text-green-400 tracking-widest uppercase">CAB</span>
+                      </div>
+                    </div>
+                    <p className="text-slate-400 text-sm leading-relaxed max-w-sm mb-5">
+                      Hubli's first cab marketplace. Connecting travellers with verified local operators for a seamless booking experience.
+                    </p>
+                    <div className="flex flex-col gap-2 text-sm">
+                      <a href="tel:+91-XXXXXXXXXX" className="flex items-center gap-2 hover:text-green-400 transition-colors">
+                        <Phone className="w-4 h-4 text-green-500"/>+91-XXXXXXXXXX
+                      </a>
+                      <a href="mailto:hello@nammacab.in" className="flex items-center gap-2 hover:text-green-400 transition-colors">
+                        <Mail className="w-4 h-4 text-green-500"/>hello@nammacab.in
+                      </a>
+                    </div>
+                  </div>
+      
+                  {/* Travellers */}
+                  <div>
+                    <div className="text-white font-bold mb-4 text-sm uppercase tracking-wider">For Travellers</div>
+                    <ul className="space-y-2 text-sm">
+                      {[["Book a Cab","#search"],["My Bookings","/user/mybookings"],["Sign in","/login"],["Create Account","/user-signup"]].map(([label, href]) => (
+                        <li key={label}><a href={href} className="hover:text-green-400 transition-colors">{label}</a></li>
+                      ))}
+                    </ul>
+                  </div>
+      
+                  {/* Operators */}
+                  <div>
+                    <div className="text-white font-bold mb-4 text-sm uppercase tracking-wider">For Operators</div>
+                    <ul className="space-y-2 text-sm">
+                      {[["Register Business","/agent-signup"],["Operator Login","/login"],["Manage Bookings","/agent/bookings"],["Dashboard","/agent/dashboard"]].map(([label, href]) => (
+                        <li key={label}><a href={href} className="hover:text-green-400 transition-colors">{label}</a></li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+      
+                <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
+                  <p>© {new Date().getFullYear()} NammaCab. Built for Hubli–Dharwad. <span className="text-green-600">ನಮ್ಮ ಕ್ಯಾಬ್</span></p>
+                  <div className="flex gap-6">
+                    <a href="#" className="hover:text-green-400 transition-colors">Privacy Policy</a>
+                    <a href="#" className="hover:text-green-400 transition-colors">Terms of Service</a>
+                    <a href="#" className="hover:text-green-400 transition-colors">Contact</a>
+                  </div>
+                </div>
+              </div>
+            </footer>
     </div>
   )
 }

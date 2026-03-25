@@ -143,9 +143,9 @@ export default function AgentBookingsPage() {
                                 <TableCell className="text-gray-800 font-medium">{(b as any).tripTypeName || "Trip"}</TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-2 text-gray-700 text-sm">
-                                    <UserIcon className="w-4 h-4 text-green-600" /> {(b as any).userName || "-"}
-                                    {(b as any).userPhone && (
-                                      <span className="flex items-center gap-1 text-gray-500 ml-3"><Phone className="w-4 h-4" />{(b as any).userPhone}</span>
+                                    <UserIcon className="w-4 h-4 text-green-600" /> {(b as any).customerName || "-"}
+                                    {(b as any).customerPhone && (
+                                      <span className="flex items-center gap-1 text-gray-500 ml-3"><Phone className="w-4 h-4" />{(b as any).customerPhone}</span>
                                     )}
                                   </div>
                                 </TableCell>
