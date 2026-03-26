@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { PageLoader } from "@/components/ui/loader"
 
-import { AgentBooking, getBookingsByAgent, getBookingById } from "@/services/bookingService"
+import { AgentBooking,  getBookingsByAgent, getBookingById } from "@/services/bookingService"
 import { Calendar, MapPin, Phone, User as UserIcon } from "lucide-react"
 
 export default function AgentBookingsPage() {
@@ -138,14 +138,21 @@ export default function AgentBookingsPage() {
                             const drop = (b as any).dropLocation || (b as any).dropoffLocation
                             const pickupDT = (b as any).pickupDateTime || (b as any).pickupTime || (b as any).createdAt
                             const status = String((b as any).status || "pending")
+                            
+                            // Check if the booking has a confirmed/active status to reveal the phone number
+                            const isConfirmed = status.toLowerCase().match(/confirmed|accepted|accept|ongoing|completed/)
+
                             return (
                               <TableRow key={idForApi}>
                                 <TableCell className="text-gray-800 font-medium">{(b as any).tripTypeName || "Trip"}</TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-2 text-gray-700 text-sm">
-                                    <UserIcon className="w-4 h-4 text-green-600" /> {(b as any).customerName || "-"}
-                                    {(b as any).customerPhone && (
-                                      <span className="flex items-center gap-1 text-gray-500 ml-3"><Phone className="w-4 h-4" />{(b as any).customerPhone}</span>
+                                    <UserIcon className="w-4 h-4 text-green-600" /> {(b as any).customerName || (b as any).userName || "-"}
+                                    {((b as any).customerPhone || (b as any).userPhone) && (
+                                      <span className="flex items-center gap-1 text-gray-500 ml-3">
+                                        <Phone className="w-4 h-4" />
+                                        {isConfirmed ? ((b as any).customerPhone || (b as any).userPhone) : "Hidden until confirmed"}
+                                      </span>
                                     )}
                                   </div>
                                 </TableCell>
@@ -219,7 +226,17 @@ export default function AgentBookingsPage() {
               </div>
               <div>
                 <div className="text-gray-500 mb-1">Customer</div>
-                <div className="font-semibold">{(details as any).userName} <span className="text-gray-500 font-normal">{(details as any).userPhone ? `(${(details as any).userPhone})` : ""}</span></div>
+                <div className="font-semibold">
+                  {(details as any).userName || (details as any).customerName} 
+                  <span className="text-gray-500 font-normal ml-1">
+                    {(() => {
+                      const phone = (details as any).userPhone || (details as any).customerPhone;
+                      if (!phone) return "";
+                      const isConfirmed = String((details as any).status || "").toLowerCase().match(/confirmed|accepted|accept|ongoing|completed/);
+                      return `(${isConfirmed ? phone : "Phone hidden until confirmed"})`;
+                    })()}
+                  </span>
+                </div>
               </div>
               <div>
                 <div className="text-gray-500 mb-1">Vehicle</div>
@@ -242,8 +259,33 @@ export default function AgentBookingsPage() {
                 <div className="font-semibold">{(details as any).seatingCapacity}</div>
               </div>
               <div>
-                <div className="text-gray-500 mb-1">Airport Price</div>
-                <div className="font-semibold">{(details as any).airportPrice ? `₹${(details as any).airportPrice}` : "-"}</div>
+                <div className="text-gray-500 mb-1">
+                  {(details as any).tripTypeName?.toLowerCase() === "airport"
+                    ? "Airport Price"
+                    : (details as any).tripTypeName?.toLowerCase() === "local"
+                    ? "Price / km"
+                    : "Outstation Price / km"}
+                </div>
+                <div className="font-semibold">
+                  {(() => {
+                    const tripType = (details as any).tripTypeName?.toLowerCase()
+                    let price = null
+
+                    if (tripType === "local") {
+                      price = (details as any).localPerKmPrice
+                    } else if (tripType === "out station" || tripType === "outstation") {
+                      price = (details as any).outPerKmPrice   
+                    } else if (tripType === "airport") {
+                      price = (details as any).airportPrice
+                    }
+
+                    return price ? `₹${price}` : "-"
+                  })()}
+                </div>
+              </div>
+              <div>
+                <div className="text-gray-500 mb-1">Notes</div>
+                <div className="font-semibold">{(details as any).notes || "-"}</div>
               </div>
             </div>
             <div className="flex items-center justify-end gap-2 mt-6">

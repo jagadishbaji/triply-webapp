@@ -65,6 +65,10 @@ export interface BookingDetail extends BookingResponse {
   
   // Trip & Pricing
   tripTypeName: string;
+  localPerKmPrice?: number;
+  outPerKmPrice?: number;
+  airportPrice?: number;
+  
 }
 
 export type BookingStatus =

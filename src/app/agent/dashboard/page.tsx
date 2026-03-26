@@ -10,18 +10,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PageLoader } from "@/components/ui/loader"
 
 import { AgentBooking, getBookingsByAgent, getBookingById, updateBookingStatus } from "@/services/bookingService"
-import { Calendar, MapPin, Check, X, Phone, User as UserIcon } from "lucide-react"
+import { getWalletByAgentId, AgentWallet } from "@/services/walletService"
+import { Calendar, MapPin, Check, X, Phone, User as UserIcon, Sparkles, TrendingUp, Clock } from "lucide-react"
 
 export default function AgentDashboardPage() {
   const [agentId, setAgentId] = useState<string>("")
   const [bookings, setBookings] = useState<AgentBooking[]>([])
+  const [wallet, setWallet] = useState<AgentWallet | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
 
-  // Details modal state
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [details, setDetails] = useState<AgentBooking | null>(null)
+  const [confirmAcceptId, setConfirmAcceptId] = useState<string | null>(null)
 
   useEffect(() => {
     const id = (getCookie("agentId") as string) || (getCookie("loginId") as string) || ""
@@ -32,10 +34,14 @@ export default function AgentDashboardPage() {
     if (!agentId) return
     try {
       setLoading(true)
-      const data = await getBookingsByAgent(agentId)
-      setBookings(data || [])
+      const [bookingsData, walletData] = await Promise.all([
+        getBookingsByAgent(agentId),
+        getWalletByAgentId(agentId)
+      ])
+      setBookings(bookingsData || [])
+      setWallet(walletData)
     } catch (err: any) {
-      setError(err?.message || "Failed to fetch bookings")
+      setError(err?.message || "Failed to fetch dashboard data")
     } finally {
       setLoading(false)
     }
@@ -46,7 +52,6 @@ export default function AgentDashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId])
 
-  // Pending only for dashboard
   const pending = useMemo(() => (bookings || []).filter(b => String((b as any).status || "").toLowerCase() === "pending"), [bookings])
 
   const grouped = useMemo(() => {
@@ -67,6 +72,7 @@ export default function AgentDashboardPage() {
       toast.success(`Booking ${status === "accept" ? "accepted" : "rejected"}`)
       await fetchData()
       setDetailsOpen(false)
+      setConfirmAcceptId(null)
     } catch (err: any) {
       toast.error(err?.message || "Failed to update booking")
     } finally {
@@ -90,22 +96,80 @@ export default function AgentDashboardPage() {
     <>
       <Toaster richColors position="top-right" />
       <div className="flex flex-1 flex-col p-6">
+        
+        {/* ── REDESIGNED METRICS CARDS ── */}
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* Savings Card */}
+          {wallet && (
+            <Card className="rounded-2xl border-none shadow-md overflow-hidden relative bg-gradient-to-br from-emerald-500 to-emerald-700 text-white">
+              <div className="absolute -right-6 -top-6 opacity-20 pointer-events-none">
+                <TrendingUp className="w-32 h-32" />
+              </div>
+              <CardContent className="p-6 relative z-10 flex flex-col justify-between h-full">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="font-medium text-emerald-100 text-lg">Platform Fees Saved</div>
+                  <span className="bg-emerald-900/60 text-emerald-50 text-[10px] px-3 py-1 rounded-full uppercase tracking-wider font-bold shadow-sm backdrop-blur-sm border border-emerald-400/30">
+                    Launch Promo
+                  </span>
+                </div>
+                <div>
+                  <div className="text-4xl font-extrabold tracking-tight">
+                    ₹{wallet.lifetimeSavings.toLocaleString('en-IN')}
+                  </div>
+                  <p className="text-emerald-100 text-sm mt-2 opacity-90">
+                    100% of your commission fees waived. Enjoy the free leads!
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Pending Bookings Card */}
+          <Card className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden relative bg-white">
+            {/* Modern side-accent bar */}
+            <div className="absolute left-0 top-0 w-1.5 h-full bg-amber-400"></div>
+            <CardContent className="p-6 pl-8 flex flex-col justify-between h-full">
+              <div className="flex items-start justify-between mb-4">
+                <div className="font-medium text-slate-500 text-lg">Pending Requests</div>
+                <div className="bg-amber-100/80 p-2.5 rounded-xl text-amber-600 shadow-sm border border-amber-200/50">
+                  <Clock className="w-5 h-5" />
+                </div>
+              </div>
+              <div>
+                <div className="text-4xl font-extrabold text-slate-800 tracking-tight">
+                  {pending.length}
+                </div>
+                <p className="text-slate-500 text-sm mt-2">
+                  New rides awaiting your confirmation.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          
+        </div>
+        {/* ──────────────────────────────── */}
+
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Pending Bookings</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Pending Bookings</h1>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={fetchData}>Refresh</Button>
+            <Button variant="outline" onClick={fetchData} className="rounded-xl">Refresh</Button>
           </div>
         </div>
 
         {error && (
-          <Card className="mb-4 border-red-200 bg-red-50">
+          <Card className="mb-4 border-red-200 bg-red-50 rounded-2xl">
             <CardContent className="p-4 text-red-700">{error}</CardContent>
           </Card>
         )}
 
         {!pending.length && !loading ? (
-          <Card className="rounded-2xl">
-            <CardContent className="p-8 text-center text-gray-600">No pending bookings.</CardContent>
+          <Card className="rounded-2xl border-dashed">
+            <CardContent className="p-12 text-center text-gray-500 flex flex-col items-center">
+              <Check className="w-12 h-12 text-gray-300 mb-3" />
+              <p className="text-lg font-medium text-gray-700">You're all caught up!</p>
+              <p className="text-sm">No pending bookings at this time.</p>
+            </CardContent>
           </Card>
         ) : (
           <div className="space-y-8">
@@ -135,6 +199,9 @@ export default function AgentDashboardPage() {
                             const pickup = (b as any).pickupLocation
                             const drop = (b as any).dropLocation || (b as any).dropoffLocation
                             const pickupDT = (b as any).pickupDateTime || (b as any).pickupTime || (b as any).createdAt
+                            
+                            const isConfirmed = String((b as any).status || "").toLowerCase().match(/confirmed|accepted|accept/)
+
                             return (
                               <TableRow key={idForApi}>
                                 <TableCell className="text-gray-800 font-medium">{(b as any).tripTypeName || "Trip"}</TableCell>
@@ -142,7 +209,10 @@ export default function AgentDashboardPage() {
                                   <div className="flex items-center gap-2 text-gray-700 text-sm">
                                     <UserIcon className="w-4 h-4 text-green-600" /> {(b as any).customerName || "-"}
                                     {(b as any).customerPhone && (
-                                      <span className="flex items-center gap-1 text-gray-500 ml-3"><Phone className="w-4 h-4" />{(b as any).customerPhone}</span>
+                                      <span className="flex items-center gap-1 text-gray-500 ml-3">
+                                        <Phone className="w-4 h-4" />
+                                        {isConfirmed ? (b as any).customerPhone : "Hidden until confirmed"}
+                                      </span>
                                     )}
                                   </div>
                                 </TableCell>
@@ -177,7 +247,7 @@ export default function AgentDashboardPage() {
                                       variant="outline"
                                       className="border-green-500 text-green-700 hover:bg-green-50 rounded-xl"
                                       disabled={updatingId === idForApi}
-                                      onClick={() => handleUpdate(idForApi, "accept")}
+                                      onClick={() => setConfirmAcceptId(idForApi)}
                                     >
                                       <Check className="w-4 h-4 mr-1" /> Accept
                                     </Button>
@@ -208,7 +278,7 @@ export default function AgentDashboardPage() {
 
       {/* Details Modal */}
       {detailsOpen && details && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-gray-800">Booking Details</h3>
@@ -229,7 +299,16 @@ export default function AgentDashboardPage() {
               </div>
               <div>
                 <div className="text-gray-500 mb-1">Customer</div>
-                <div className="font-semibold">{(details as any).userName} <span className="text-gray-500 font-normal">{(details as any).userPhone ? `(${(details as any).userPhone})` : ""}</span></div>
+                <div className="font-semibold">
+                  {(details as any).customerName} 
+                  <span className="text-gray-500 font-normal ml-1">
+                    {(() => {
+                      if (!(details as any).customerPhone) return "";
+                      const isConfirmed = String((details as any).status || "").toLowerCase().match(/confirmed|accepted|accept/);
+                      return `(${isConfirmed ? (details as any).customerPhone : "Phone hidden until confirmed"})`;
+                    })()}
+                  </span>
+                </div>
               </div>
               <div>
                 <div className="text-gray-500 mb-1">Vehicle</div>
@@ -252,28 +331,40 @@ export default function AgentDashboardPage() {
                 <div className="font-semibold">{(details as any).seatingCapacity}</div>
               </div>
               <div>
-                <div className="text-gray-500 mb-1">Airport Price</div>
-                <div className="font-semibold">{(details as any).airportPrice ? `₹${(details as any).airportPrice}` : "-"}</div>
+                <div className="text-gray-500 mb-1">
+                  {(details as any).tripTypeName?.toLowerCase() === "airport"
+                    ? "Airport Price"
+                    : (details as any).tripTypeName?.toLowerCase() === "local"
+                    ? "Price / km"
+                    : "Outstation Price / km"}
+                </div>
+                <div className="font-semibold">
+                  {(() => {
+                    const tripType = (details as any).tripTypeName?.toLowerCase()
+                    let price = null
+
+                    if (tripType === "local") {
+                      price = (details as any).localPerKmPrice
+                    } else if (tripType === "out station") {
+                      price = (details as any).outPerKmPrice   
+                    } else if (tripType === "airport") {
+                      price = (details as any).airportPrice
+                    }
+
+                    return price ? `₹${price}` : "-"
+                  })()}
+                </div>
+              </div>
+               <div>
+                <div className="text-gray-500 mb-1">Notes</div>
+                <div className="font-semibold">{(details as any).notes || "-"}</div>
               </div>
             </div>
             <div className="flex items-center justify-end gap-2 mt-6">
               <Button
                 variant="outline"
                 className="border-green-500 text-green-700 hover:bg-green-50 rounded-xl"
-                onClick={async () => {
-                  const id = String((details as any).bookingId || (details as any).id)
-                  try {
-                    setUpdatingId(id)
-                    await updateBookingStatus(id, "accept")
-                    toast.success("Booking accepted")
-                    setDetailsOpen(false)
-                    await fetchData()
-                  } catch (e: any) {
-                    toast.error(e?.message || "Failed to accept")
-                  } finally {
-                    setUpdatingId(null)
-                  }
-                }}
+                onClick={() => setConfirmAcceptId(String((details as any).bookingId || (details as any).id))}
               >
                 <Check className="w-4 h-4 mr-1" /> Accept
               </Button>
@@ -298,6 +389,59 @@ export default function AgentDashboardPage() {
                 <X className="w-4 h-4 mr-1" /> Reject
               </Button>
               <Button onClick={() => setDetailsOpen(false)} className="rounded-xl">Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Shadow Ledger Acceptance */}
+      {confirmAcceptId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-green-100 rounded-bl-full -z-10 opacity-50" />
+            
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xl font-bold text-gray-900">Accept Booking</h3>
+              <button className="text-gray-400 hover:text-gray-600" onClick={() => setConfirmAcceptId(null)}>✕</button>
+            </div>
+            <p className="text-gray-600 text-sm mb-6">You are about to accept this booking and reveal the customer's contact information.</p>
+
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5 mb-6 relative overflow-hidden">
+              <div className="absolute -top-3 -right-3 bg-red-500 text-white text-[10px] font-bold px-4 py-4 rounded-full flex items-center justify-center transform rotate-12 shadow-lg">
+                <div className="flex flex-col items-center">
+                  <Sparkles className="w-3 h-3 mb-0.5" />
+                  <span>100%</span>
+                  <span>FREE</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center text-gray-600">
+                  <span className="text-sm font-medium">Standard Platform Fee</span>
+                  <span className="text-gray-400 line-through decoration-gray-400">₹100.00</span>
+                </div>
+                
+                <div className="flex justify-between items-center text-emerald-600">
+                  <span className="text-sm font-bold flex items-center gap-1">Launch Promo Applied</span>
+                  <span className="font-bold">-₹100.00</span>
+                </div>
+
+                <div className="border-t border-green-200/60 pt-3 mt-1 flex justify-between items-center">
+                  <span className="text-gray-900 font-bold">Total to Deduct</span>
+                  <span className="text-2xl font-black text-gray-900">₹0</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setConfirmAcceptId(null)}>Cancel</Button>
+              <Button 
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-md"
+                disabled={updatingId === confirmAcceptId}
+                onClick={() => handleUpdate(confirmAcceptId, "accept")}
+              >
+                {updatingId === confirmAcceptId ? "Processing..." : "Confirm & Accept"}
+              </Button>
             </div>
           </div>
         </div>

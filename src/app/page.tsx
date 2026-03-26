@@ -45,7 +45,7 @@ const CAR_IMAGE_MAP: Record<string, string> = {
   "suv": "Scorpio-nobg.png",
   "premium-suv": "Toyota-Innova--Crysta-MPV.png",
   "tempo-traveller": "tt-nobg.png",
-  "coach-bus": "TT.jpg", // Fallback if coach bus image isn't separate yet
+  "bus": "Bus-nobg.png", // Fallback if coach bus image isn't separate yet
 }
 // ── Vehicle card colours by badge ──────────────────────────────────────────
 const BADGE_COLORS: Record<string, string> = {
@@ -146,7 +146,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           HERO
       ════════════════════════════════════════════════════════════════════ */}
-      <section className="relative min-h-screen flex flex-col justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-green-950 to-slate-900 pt-20">
+      <section className="relative min-h-[85vh] flex items-center bg-gradient-to-br from-slate-950 via-green-950 to-slate-900 pt-24 pb-32 overflow-hidden">
         {/* Background glows */}
         <div className="absolute inset-0 opacity-20" style={{
           backgroundImage:`radial-gradient(circle at 20% 50%,#16a34a 0%,transparent 50%),
@@ -231,7 +231,7 @@ export default function LandingPage() {
       {/* ════════════════════════════════════════════════════════════════════
           SEARCH
       ════════════════════════════════════════════════════════════════════ */}
-      <section id="search" className="relative z-20 py-0">
+      <section id="search" className="relative z-30 -mt-28 px-4">
         <div className="max-w-6xl mx-auto px-4 -mt-1">
           <motion.div initial={{ opacity:0, y:40 }} animate={{ opacity:1, y:0 }}
             transition={{ duration:0.7, delay:0.3 }}
@@ -270,7 +270,7 @@ export default function LandingPage() {
                     <MapPin className="w-4 h-4 text-green-500 mr-2 flex-shrink-0"/>
                     <Input type="text" placeholder="e.g. Hubli Railway Station"
                       value={pickup} onChange={e => setPickup(e.target.value)} required
-                      className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 placeholder:text-slate-400"/>
+                      className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 placeholder:text-slate-400 w-full flex-1"/>
                   </div>
                 </div>
 
@@ -281,7 +281,7 @@ export default function LandingPage() {
                       <MapPin className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0"/>
                       <Input type="text" placeholder="e.g. Dharwad, Bangalore"
                         value={destination} onChange={e => setDestination(e.target.value)} required={!isAirport}
-                        className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 placeholder:text-slate-400"/>
+                        className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 placeholder:text-slate-400 w-full flex-1"/>
                     </div>
                   </div>
                 ) : (
@@ -298,27 +298,27 @@ export default function LandingPage() {
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Travel Date</label>
                   <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 h-12 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 transition-all">
                     <Calendar className="w-4 h-4 text-green-500 mr-2 flex-shrink-0"/>
-                    <Input type="date" min={today} value={date}
+                    <Input id="date" type="date" min={today} value={date}
                       onChange={e => setDate(e.target.value)} required
-                      className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0"/>
+                      className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 w-full flex-1" />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Vehicle Type</label>
                   <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 h-12 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 transition-all">
-                    <Car className="w-4 h-4 text-green-500 mr-2 flex-shrink-0"/>
+                  
                     <Select value={vehicleTypeId} onValueChange={val => {
                       setVehicleTypeId(val)
                       setVehicleTypeName(vehicleTypes.find(v => v.id === val)?.name || "")
                     }}>
-                      <SelectTrigger className="border-0 bg-transparent p-0 h-auto text-sm focus:ring-0 shadow-none">
+                      <SelectTrigger className="border-0 bg-transparent p-0 h-auto text-sm focus:ring-0 shadow-none w-full flex-1">
                         <SelectValue placeholder="Any vehicle"/>
                       </SelectTrigger>
                       <SelectContent>
                         {vehicleTypes.map(v => (
                           <SelectItem key={v.id} value={v.id}>
-                            {v.iconEmoji} {v.name}
+                             {v.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

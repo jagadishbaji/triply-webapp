@@ -4,9 +4,9 @@ import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { deleteCookie } from "cookies-next"
 import { logout } from "@/services/authService"
+import { getWalletByAgentId } from "@/services/walletService" // <-- Added import
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
-import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +22,7 @@ import {
   Settings,
   ChevronRight,
   LayoutDashboard,
+  Wallet, // <-- Added Wallet icon
 } from "lucide-react"
 
 // ─── Route → page title map ─────────────────────────────────────────────────
@@ -83,14 +84,27 @@ export function SiteHeader() {
 
   const [userName,    setUserName]    = useState("")
   const [role,        setRole]        = useState("")
+  const [walletPoints, setWalletPoints] = useState<number | null>(null) // <-- Added state for wallet
   const [loggingOut,  setLoggingOut]  = useState(false)
 
   useEffect(() => {
     const name = readCookie("loggedName")
     const r    = readCookie("role")
+    const id   = readCookie("loginId") // Fetch loginId to use as agentId
+
     if (name && name !== "null" && name !== "undefined") setUserName(name)
-    if (r)    setRole(r)
-  }, [pathname])
+    if (r) setRole(r)
+
+    // Fetch wallet data only if the user is an agent
+    if (r === "agent" && id) {
+      getWalletByAgentId(id)
+        .then(wallet => {
+          // Setting the balance as points. 
+          setWalletPoints(wallet.currentBalance);
+        })
+        .catch(err => console.error("Failed to load wallet points in header:", err));
+    }
+  }, [pathname]) // Refreshing on pathname change ensures points update when navigating
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -134,6 +148,17 @@ export function SiteHeader() {
 
       {/* ── Right: user menu ───────────────────────────────────── */}
       <div className="flex items-center gap-3">
+
+        {/* Agent Wallet Badge */}
+        {role === "agent" && walletPoints !== null && (
+          <div 
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-xl text-green-700 font-semibold text-sm shadow-sm cursor-default transition-all hover:bg-green-100"
+            title="Your available NammaCab points"
+          >
+            <Wallet className="w-4 h-4 text-green-600" />
+            <span>₹{walletPoints.toLocaleString('en-IN')} </span>
+          </div>
+        )}
 
         {/* User dropdown */}
         <DropdownMenu>

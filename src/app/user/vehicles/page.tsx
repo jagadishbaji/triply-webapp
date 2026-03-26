@@ -355,20 +355,18 @@ function VehiclesPageInner() {
   const isAirport = tripName.toLowerCase().includes("airport")
 
   const doSearch = useCallback(async (ttId: string, vtId: string) => {
-    if (!ttId) return
-    setLoading(true); setSearched(true)
-    try {
-      let data = await getPricesByTripTypeId(ttId)
-      if (vtId) {
-        const nm = vehicleTypes.find(v => v.id === vtId)?.id?.toLowerCase() ?? ""
-        if (nm) data = data.filter(v =>
-          v.id?.toLowerCase().includes(nm) || v.vehicleTypeId?.toLowerCase().includes(nm)
-        )
-      }
-      setResults(data)
-    } catch { setResults([]) }
-    finally { setLoading(false) }
-  }, [vehicleTypes])
+  if (!ttId) return
+  setLoading(true); setSearched(true)
+  try {
+    let data = await getPricesByTripTypeId(ttId)
+    // Filter by vehicle type if specified
+    if (vtId) {
+      data = data.filter(v => v.vehicleTypeId === vtId)
+    }
+    setResults(data)
+  } catch { setResults([]) }
+  finally { setLoading(false) }
+}, [])
 
   useEffect(() => {
     if (tripTypeId) doSearch(tripTypeId, vehicleTypeId)
@@ -498,7 +496,7 @@ function VehiclesPageInner() {
             <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 h-10 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 min-w-[150px] flex-1">
               <MapPin className="w-4 h-4 text-green-500 mr-2 flex-shrink-0"/>
               <Input value={pickup} onChange={e=>setPickup(e.target.value)} placeholder="Pickup" required
-                className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0"/>
+                className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 w-full flex-1"/>
             </div>
 
             {!isAirport && (
@@ -512,13 +510,13 @@ function VehiclesPageInner() {
             <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 h-10 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100">
               <Calendar className="w-4 h-4 text-green-500 mr-2 flex-shrink-0"/>
               <Input type="date" min={today} value={date} onChange={e=>setDate(e.target.value)} required
-                className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 w-32"/>
+                className="border-0 bg-transparent p-0 h-auto text-sm focus-visible:ring-0 w-32 w-full flex-1"/>
             </div>
 
             <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 h-10 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 min-w-[140px]">
-              <Car className="w-4 h-4 text-green-500 mr-2 flex-shrink-0"/>
+             
               <Select value={vehicleTypeId} onValueChange={v => setVehicleTypeId(v === "all" ? "" : v)}>
-                <SelectTrigger className="border-0 bg-transparent p-0 h-auto text-sm focus:ring-0 shadow-none">
+                <SelectTrigger className="border-0 bg-transparent p-0 h-auto text-sm focus:ring-0 shadow-none w-full flex-1">
                   <SelectValue placeholder="Any vehicle"/>
                 </SelectTrigger>
                 <SelectContent>
@@ -563,8 +561,8 @@ function VehiclesPageInner() {
 
         {searched && !loading && results.length === 0 && (
           <div className="text-center py-20 bg-white rounded-2xl border border-slate-100">
-            <Car className="w-10 h-10 text-slate-300 mx-auto mb-3"/>
-            <h3 className="font-bold text-slate-900 mb-1">No cabs available</h3>
+            
+            <h3 className="font-bold text-slate-900 mb-1">No Vehicles Available for this search</h3>
             <p className="text-sm text-slate-500">Try a different trip type or vehicle category</p>
           </div>
         )}
@@ -676,8 +674,8 @@ function VehiclesPageInner() {
                       Hubli's first cab marketplace. Connecting travellers with verified local operators for a seamless booking experience.
                     </p>
                     <div className="flex flex-col gap-2 text-sm">
-                      <a href="tel:+91-XXXXXXXXXX" className="flex items-center gap-2 hover:text-green-400 transition-colors">
-                        <Phone className="w-4 h-4 text-green-500"/>+91-XXXXXXXXXX
+                      <a href="tel:+91-884856868" className="flex items-center gap-2 hover:text-green-400 transition-colors">
+                        <Phone className="w-4 h-4 text-green-500"/>+91-8884856868
                       </a>
                       <a href="mailto:hello@nammacab.in" className="flex items-center gap-2 hover:text-green-400 transition-colors">
                         <Mail className="w-4 h-4 text-green-500"/>hello@nammacab.in
@@ -689,7 +687,7 @@ function VehiclesPageInner() {
                   <div>
                     <div className="text-white font-bold mb-4 text-sm uppercase tracking-wider">For Travellers</div>
                     <ul className="space-y-2 text-sm">
-                      {[["Book a Cab","#search"],["My Bookings","/user/mybookings"],["Sign in","/login"],["Create Account","/user-signup"]].map(([label, href]) => (
+                      {[["Book a Cab","#search"]].map(([label, href]) => (
                         <li key={label}><a href={href} className="hover:text-green-400 transition-colors">{label}</a></li>
                       ))}
                     </ul>
