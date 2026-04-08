@@ -161,7 +161,7 @@ export default function ApproveAgentsPage() {
     if (!selected) return;
     setSubmitting(true);
     try {
-      await rejectAgent(selected.id, rejectReason || "Rejected by admin");
+      await rejectAgent(selected.id,  "Rejected by admin");
       removeAgent(selected.id);
       toast.success(`${selected.name}'s application has been rejected.`);
       closeDialog();
@@ -175,7 +175,7 @@ export default function ApproveAgentsPage() {
   // ── Inline reject (no dialog, direct from table row) ─────────────────
   const onQuickReject = async (agent: Agent) => {
     try {
-      await rejectAgent(agent.id, rejectReason || "Rejected by admin");
+      await rejectAgent(agent.id, "Rejected by admin");
       removeAgent(agent.id);
       toast.success(`${agent.businessName ?? agent.businessName ?? agent.name}'s application has been rejected.`);
     } catch {

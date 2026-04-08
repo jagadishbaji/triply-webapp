@@ -54,7 +54,7 @@ export default function Navbar() {
             </div>
             <div className="leading-none">
               <span className="font-black text-xl text-white tracking-tight">namma</span>
-              <span className="font-black text-xl text-green-400 tracking-widest uppercase">CABO</span>
+              <span className="font-black text-xl text-green-400 tracking-widest uppercase">CAB</span>
             </div>
           </Link>
 

@@ -13,6 +13,9 @@ export function middleware(req: NextRequest) {
     "/forgot-password",
     "/reset-password",
     "/user/vehicles",
+    "/terms",      // ← Added Terms & Conditions
+    "/privacy",    // ← Added Privacy Policy
+    "/nammacab-banner.mp4", // ← Allow video asset
   ];
 
   if (alwaysAllow.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
@@ -37,6 +40,7 @@ export function middleware(req: NextRequest) {
 
   // ── STEP 4: Protected routes — must have token ────────────────────────
   if (!token) {
+    // If no token and not in the alwaysAllow list, redirect to home
     return NextResponse.redirect(new URL("/", req.url));
   }
 

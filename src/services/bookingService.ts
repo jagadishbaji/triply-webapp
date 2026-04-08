@@ -14,6 +14,11 @@ export interface GuestBookingRequest {
   pickupLocation: string;
   dropLocation?:  string;
   pickupDateTime: string;
+  
+  // ── NEW FIELDS ──
+  isRoundTrip?:   boolean;
+  returnDate?:    string;
+  
   // Optional if logged in
   userId?:        string;
 }
@@ -33,7 +38,7 @@ export interface BookingResponse {
 }
 
 export interface BookingDetail extends BookingResponse {
- bookingId: string;
+  bookingId: string;
   bookingRef: string;
   userId?: string;
   customerName: string;
@@ -46,6 +51,11 @@ export interface BookingDetail extends BookingResponse {
   pickupLocation: string;
   dropoffLocation: string;
   pickupTime: string; 
+  
+  // ── NEW FIELDS ──
+  isRoundTrip?: boolean;
+  returnDate?: string;
+  
   status: string;
   finalPrice?: number;
   createdAt: string;
