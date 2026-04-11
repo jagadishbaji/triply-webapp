@@ -44,6 +44,7 @@ export interface CreateAgentPayload {
     licenseNumber?: string;
     whatsAppNumber?: string;
     gstNumber?: string;
+    isActive?: boolean;
   };
 }
 

@@ -442,7 +442,7 @@ export default function ApproveAgentsPage() {
             )}
 
             <p className="text-sm text-slate-600 mb-5">
-              Approving will send them a notification and allow them to start listing their vehicles on <strong>Triply Cars</strong>.
+              Approving will send them a notification and allow them to start listing their vehicles on <strong>NammaCab</strong>.
             </p>
 
             <DialogFooter className="gap-2">

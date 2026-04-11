@@ -201,6 +201,7 @@ export default function AgentsPage() {
           address:       data.address,
           city:          "Hubli",
           licenseNumber: data.licenseNumber || undefined,
+          isActive:      data.isActive,
         },
       })
       setAgents(prev => [...prev, newAgent])
@@ -512,7 +513,7 @@ export default function AgentsPage() {
                 <Controller name="isActive" control={addForm.control}
                   render={({ field }) => (
                     <Checkbox id="add-isActive" checked={field.value}
-                      onCheckedChange={v => field.onChange(v === true)}/>
+                      onCheckedChange={v => field.onChange(v === true)} {...addForm.register("isActive")}/>
                   )}/>
                 <div>
                   <Label htmlFor="add-isActive" className="text-sm font-semibold text-slate-700 cursor-pointer">

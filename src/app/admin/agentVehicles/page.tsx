@@ -520,18 +520,6 @@ export default function AgentVehiclesPage() {
             </DialogHeader>
 
             <form onSubmit={handleSubmit(onAdd)} className="flex flex-col gap-4">
-              <Field label="Vehicle Name" icon={IconCar} error={errors.name?.message}>
-                <Input placeholder="e.g. Swift Dzire, Innova Crysta" {...register("name")} className={inp} />
-              </Field>
-
-              <Field label="Company / Brand" icon={IconBuilding} error={errors.company?.message}>
-                <Input placeholder="e.g. Maruti, Toyota, Mahindra" {...register("company")} className={inp} />
-              </Field>
-
-              <Field label="Seating Capacity" icon={IconArmchair} error={errors.seatingCapacity?.message}>
-                <Input type="number" min={1} max={60} placeholder="e.g. 5" {...register("seatingCapacity")} className={inp} />
-              </Field>
-
               {/* Vehicle type */}
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-slate-700">Vehicle Type</Label>
@@ -549,6 +537,19 @@ export default function AgentVehiclesPage() {
                   </Select>
                 </div>
               </div>
+              <Field label="Vehicle Name" icon={IconCar} error={errors.name?.message}>
+                <Input placeholder="e.g. Swift Dzire, Innova Crysta" {...register("name")} className={inp} />
+              </Field>
+
+              <Field label="Company / Brand" icon={IconBuilding} error={errors.company?.message}>
+                <Input placeholder="e.g. Maruti, Toyota, Mahindra" {...register("company")} className={inp} />
+              </Field>
+
+              <Field label="Seating Capacity" icon={IconArmchair} error={errors.seatingCapacity?.message}>
+                <Input type="number" min={1} max={60} placeholder="e.g. 5" {...register("seatingCapacity")} className={inp} />
+              </Field>
+
+              
 
               <DialogFooter className="gap-2 mt-2">
                 <Button type="button" variant="outline" onClick={closeDialog} disabled={submitting} className="rounded-xl border-slate-200">
@@ -583,18 +584,7 @@ export default function AgentVehiclesPage() {
             </DialogHeader>
 
             <form onSubmit={handleSubmit(onEdit)} className="flex flex-col gap-4">
-              <Field label="Vehicle Name" icon={IconCar} error={errors.name?.message}>
-                <Input placeholder="Vehicle name" {...register("name")} className={inp} />
-              </Field>
-
-              <Field label="Company / Brand" icon={IconBuilding} error={errors.company?.message}>
-                <Input placeholder="Company or brand" {...register("company")} className={inp} />
-              </Field>
-
-              <Field label="Seating Capacity" icon={IconArmchair} error={errors.seatingCapacity?.message}>
-                <Input type="number" min={1} max={60} {...register("seatingCapacity")} className={inp} />
-              </Field>
-
+              {/* Vehicle type */}
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-semibold text-slate-700">Vehicle Type</Label>
                 <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 h-11 focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400 transition-all">
@@ -612,6 +602,19 @@ export default function AgentVehiclesPage() {
                 </div>
               </div>
 
+              <Field label="Vehicle Name" icon={IconCar} error={errors.name?.message}>
+                <Input placeholder="Vehicle name" {...register("name")} className={inp} />
+              </Field>
+
+              <Field label="Company / Brand" icon={IconBuilding} error={errors.company?.message}>
+                <Input placeholder="Company or brand" {...register("company")} className={inp} />
+              </Field>
+
+              <Field label="Seating Capacity" icon={IconArmchair} error={errors.seatingCapacity?.message}>
+                <Input type="number" min={1} max={60} {...register("seatingCapacity")} className={inp} />
+              </Field>
+
+              
               <DialogFooter className="gap-2 mt-2">
                 <Button type="button" variant="outline" onClick={closeDialog} disabled={submitting} className="rounded-xl border-slate-200">
                   Cancel

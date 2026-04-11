@@ -28,6 +28,7 @@ export interface CreateVehicleDTO {
 
 export interface UpdateVehicleDTO {
   vehicleTypeId?: string;
+  agentId: string;
   name?: string;
   company?: string;
   seatingCapacity?: number;
