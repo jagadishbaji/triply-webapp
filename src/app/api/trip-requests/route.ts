@@ -38,6 +38,10 @@ if (!globalThis.__ridevo_memory_leads) {
   globalThis.__ridevo_memory_leads = []
 }
 
+// ── Upstash / Vercel KV Config (Instant Cloud Database for Serverless) ─────
+const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+
 // ── Vercel vs Local File System Resolution ──────────────────────────────────
 const IS_VERCEL = Boolean(process.env.VERCEL)
 const SEED_FILE = path.join(process.cwd(), "data", "trip-requests.json")
@@ -59,13 +63,34 @@ async function loadSeedBookings(): Promise<StoredTripRequest[]> {
 async function getAllBookings(): Promise<StoredTripRequest[]> {
   const mergedMap = new Map<string, StoredTripRequest>()
 
-  // 1. Load bundled seed file
-  const seedList = await loadSeedBookings()
-  for (const b of seedList) {
-    if (b?.bookingRef) mergedMap.set(b.bookingRef, b)
+  // 1. Try Upstash / Vercel KV first (Live Cloud DB across all Vercel Lambdas)
+  if (KV_URL && KV_TOKEN) {
+    try {
+      const res = await fetch(`${KV_URL}/get/ridevo_all_bookings`, {
+        headers: { Authorization: `Bearer ${KV_TOKEN}` },
+        cache: "no-store",
+      })
+      const data = await res.json()
+      if (data?.result) {
+        const parsed = typeof data.result === "string" ? JSON.parse(data.result) : data.result
+        if (Array.isArray(parsed)) {
+          for (const b of parsed) {
+            if (b?.bookingRef) mergedMap.set(b.bookingRef, b)
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("KV bookings read failed, falling back to disk/seed:", err)
+    }
   }
 
-  // 2. Load runtime file (/tmp or data/)
+  // 2. Load bundled seed file
+  const seedList = await loadSeedBookings()
+  for (const b of seedList) {
+    if (b?.bookingRef && !mergedMap.has(b.bookingRef)) mergedMap.set(b.bookingRef, b)
+  }
+
+  // 3. Load runtime file (/tmp or data/)
   try {
     const raw = await fs.readFile(RUNTIME_FILE, "utf-8")
     const parsed = JSON.parse(raw)
@@ -78,7 +103,7 @@ async function getAllBookings(): Promise<StoredTripRequest[]> {
     // File might not exist yet on fresh container
   }
 
-  // 3. Load from global memory cache
+  // 4. Load from global memory cache
   if (globalThis.__ridevo_memory_leads && Array.isArray(globalThis.__ridevo_memory_leads)) {
     for (const b of globalThis.__ridevo_memory_leads) {
       if (b?.bookingRef) mergedMap.set(b.bookingRef, b)
@@ -90,11 +115,25 @@ async function getAllBookings(): Promise<StoredTripRequest[]> {
   return list
 }
 
-// ── Helper: Safely persist list to runtime disk ─────────────────────────────
+// ── Helper: Safely persist list to runtime disk & cloud KV ──────────────────
 async function persistBookings(list: StoredTripRequest[]): Promise<void> {
   // Always update memory cache first
   globalThis.__ridevo_memory_leads = list
 
+  // 1. Persist to Upstash / Vercel KV if available
+  if (KV_URL && KV_TOKEN) {
+    try {
+      await fetch(`${KV_URL}/set/ridevo_all_bookings`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${KV_TOKEN}` },
+        body: JSON.stringify(list),
+      })
+    } catch (err) {
+      console.warn("KV bookings write failed:", err)
+    }
+  }
+
+  // 2. Persist to runtime disk
   try {
     await fs.mkdir(RUNTIME_DIR, { recursive: true })
     await fs.writeFile(RUNTIME_FILE, JSON.stringify(list, null, 2), "utf-8")
@@ -120,6 +159,7 @@ export async function GET() {
       success: true,
       count: list.length,
       bookings: list,
+      storageEngine: KV_URL && KV_TOKEN ? "vercel_kv_upstash" : IS_VERCEL ? "vercel_ephemeral" : "local_disk",
     })
   } catch (err: any) {
     return NextResponse.json(

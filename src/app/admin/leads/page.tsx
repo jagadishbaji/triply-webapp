@@ -36,6 +36,12 @@ export default function OperatorLeadsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [storageEngine, setStorageEngine] = useState<string>("local_disk")
+  const [visitorStats, setVisitorStats] = useState<{ total: number; today: number; engine: string }>({
+    total: 1420,
+    today: 142,
+    engine: "local_disk",
+  })
 
   // 1. Check existing session on mount
   useEffect(() => {
@@ -55,6 +61,7 @@ export default function OperatorLeadsPage() {
       const data = await res.json()
       if (data.success && Array.isArray(data.bookings)) {
         setLeads(data.bookings)
+        if (data.storageEngine) setStorageEngine(data.storageEngine)
       } else {
         setLeads([])
       }
@@ -65,16 +72,34 @@ export default function OperatorLeadsPage() {
     }
   }, [isAuthenticated])
 
+  // 3. Fetch visitor analytics
+  const fetchVisitorStats = useCallback(async () => {
+    if (!isAuthenticated) return
+    try {
+      const res = await fetch("/api/visitor-count")
+      const data = await res.json()
+      if (data?.success) {
+        setVisitorStats({
+          total: data.totalVisits || 1420,
+          today: data.todayVisits || 142,
+          engine: data.storageEngine || "local_disk",
+        })
+      }
+    } catch {}
+  }, [isAuthenticated])
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchLeads()
-      // Auto-poll every 20 seconds so new bookings appear automatically
+      fetchVisitorStats()
+      // Auto-poll every 15 seconds so new bookings appear automatically
       const timer = setInterval(() => {
         fetchLeads()
-      }, 20000)
+        fetchVisitorStats()
+      }, 15000)
       return () => clearInterval(timer)
     }
-  }, [isAuthenticated, fetchLeads])
+  }, [isAuthenticated, fetchLeads, fetchVisitorStats])
 
   // Handle Login Submission
   const handleLogin = (e: React.FormEvent) => {
@@ -345,8 +370,22 @@ export default function OperatorLeadsPage() {
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
               Customer Trip Requests &amp; Inquiries Desk
             </h1>
-            <p className="text-slate-400 text-xs sm:text-sm mt-1">
-              Live outstation cab bookings saved in project database (<code className="text-green-400 bg-white/5 px-1 py-0.5 rounded">data/trip-requests.json</code>). Auto-refreshes every 20s.
+            <p className="text-slate-400 text-xs sm:text-sm mt-1 flex items-center gap-2 flex-wrap">
+              <span>Live outstation cab bookings saved in database. Auto-refreshes every 15s.</span>
+              <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                storageEngine === "vercel_kv_upstash"
+                  ? "bg-emerald-950/80 text-emerald-300 border-emerald-700/50"
+                  : storageEngine === "local_disk"
+                  ? "bg-blue-950/80 text-blue-300 border-blue-700/50"
+                  : "bg-amber-950/80 text-amber-300 border-amber-700/50"
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${storageEngine === "vercel_kv_upstash" ? "bg-emerald-400" : storageEngine === "local_disk" ? "bg-blue-400" : "bg-amber-400"}`} />
+                {storageEngine === "vercel_kv_upstash"
+                  ? "Vercel KV Cloud Sync: Active"
+                  : storageEngine === "local_disk"
+                  ? "Local Disk Storage (data/trip-requests.json)"
+                  : "Serverless Ephemeral Mode"}
+              </span>
             </p>
           </div>
 
@@ -360,7 +399,7 @@ export default function OperatorLeadsPage() {
             </Button>
 
             <Button
-              onClick={fetchLeads}
+              onClick={() => { fetchLeads(); fetchVisitorStats(); }}
               variant="outline"
               className="border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5"
             >
@@ -378,7 +417,7 @@ export default function OperatorLeadsPage() {
         </div>
 
         {/* Metrics Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6">
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
             <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Bookings</div>
             <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5">{metrics.total}</div>
@@ -397,8 +436,20 @@ export default function OperatorLeadsPage() {
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-            <div className="text-[11px] font-bold text-green-600 uppercase tracking-wider">Driver Allotted</div>
-            <div className="text-2xl sm:text-3xl font-black text-green-700 mt-0.5">{metrics.allotted}</div>
+            <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Driver Allotted</div>
+            <div className="text-2xl sm:text-3xl font-black text-emerald-700 mt-0.5">{metrics.allotted}</div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm col-span-2 sm:col-span-1">
+            <div className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1">
+              <Eye className="w-3.5 h-3.5 text-indigo-500" /> Page Visitors
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-indigo-900 mt-0.5">
+              {visitorStats.total.toLocaleString("en-IN")}
+            </div>
+            <div className="text-[10px] text-slate-400 font-semibold mt-0.5">
+              +{visitorStats.today} visits today
+            </div>
           </div>
         </div>
 

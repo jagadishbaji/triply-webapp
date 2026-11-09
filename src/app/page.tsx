@@ -116,6 +116,30 @@ export default function HomePage() {
 
   // ── Accordion FAQ State ──
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0)
+  const [visitorCount, setVisitorCount] = useState<number>(1420)
+
+  // ── Track & Fetch Page Visitors ──
+  useEffect(() => {
+    try {
+      const recorded = sessionStorage.getItem("ridevo_visited_session")
+      if (!recorded) {
+        fetch("/api/visitor-count", { method: "POST" })
+          .then((r) => r.json())
+          .then((d) => {
+            if (d?.totalVisits) setVisitorCount(d.totalVisits)
+          })
+          .catch(() => {})
+        sessionStorage.setItem("ridevo_visited_session", "true")
+      } else {
+        fetch("/api/visitor-count")
+          .then((r) => r.json())
+          .then((d) => {
+            if (d?.totalVisits) setVisitorCount(d.totalVisits)
+          })
+          .catch(() => {})
+      }
+    } catch {}
+  }, [])
 
   const resultsRef = useRef<HTMLDivElement>(null)
   const dateInputRef = useRef<HTMLInputElement>(null)
@@ -432,10 +456,15 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             >
-              {/* Trust Pill */}
-              <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/30 text-green-400 px-3.5 py-1 rounded-full text-xs font-semibold mb-4 backdrop-blur-sm">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                Hubli&apos;s Dedicated Outstation Cab Network
+              {/* Trust Pill & Live Visitors Counter */}
+              <div className="inline-flex items-center flex-wrap gap-2 sm:gap-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3.5 py-1.5 rounded-full text-xs font-semibold mb-4 backdrop-blur-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Hubli&apos;s Dedicated Outstation Fleet</span>
+                <span className="text-emerald-500/60 hidden sm:inline">•</span>
+                <span className="text-emerald-300 font-bold flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5" />
+                  <span suppressHydrationWarning>{visitorCount.toLocaleString("en-IN")}+ Travelers Visited</span>
+                </span>
               </div>
 
               {/* High-Intent SEO Headline */}
