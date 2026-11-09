@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { getCookie, deleteCookie } from "cookies-next"
 import { Button } from "@/components/ui/button"
 import { User, LogOut, LayoutDashboard, Menu, X, Phone } from "lucide-react"
+import { RidevoLogo } from "@/components/RidevoLogo"
 
 export default function Navbar() {
   const router   = useRouter()
@@ -48,15 +49,7 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0">
-            <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg shadow-green-600/30 group-hover:scale-105 transition-transform">
-              <span className="text-white font-black text-xl leading-none tracking-tight">R</span>
-            </div>
-            <div className="leading-none flex items-center tracking-tight">
-              <span className="font-black text-2xl text-white">RIDE</span>
-              <span className="font-black text-2xl text-green-400">VO</span>
-            </div>
-          </Link>
+          <RidevoLogo size="md" theme="dark" showTagline={true} />
 
           {/* Desktop nav */}
           <nav className="hidden md:flex gap-8 font-semibold text-sm">

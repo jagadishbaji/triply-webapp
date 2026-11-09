@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
+import { RidevoLogo } from "@/components/RidevoLogo"
 import {
   Car, MapPin, Calendar, Clock, ArrowRight, Shield,
   Users, CheckCircle2, Phone, Mail, Building2,
@@ -453,32 +454,32 @@ export default function HomePage() {
 
               {/* Verified Badges Bar */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-w-xl mx-auto lg:mx-0">
-                <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center backdrop-blur-sm">
-                  <div className="text-xs text-green-400 font-bold flex items-center justify-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-green-400" /> Verified
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5 sm:p-3 text-center backdrop-blur-sm hover:border-emerald-500/30 transition-colors">
+                  <div className="text-xs text-emerald-400 font-bold flex items-center justify-center gap-1.5 mb-0.5">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" /> Verified
                   </div>
-                  <div className="text-[11px] text-slate-400 font-medium">Tied-up Hubli Cabs</div>
+                  <div className="text-[11px] text-slate-300 font-medium">Tied-up Hubli Cabs</div>
                 </div>
 
-                <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center backdrop-blur-sm">
-                  <div className="text-xs text-green-400 font-bold flex items-center justify-center gap-1">
-                    <Navigation className="w-3.5 h-3.5 text-green-400" /> 300 km/day
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5 sm:p-3 text-center backdrop-blur-sm hover:border-emerald-500/30 transition-colors">
+                  <div className="text-xs text-emerald-400 font-bold flex items-center justify-center gap-1.5 mb-0.5">
+                    <Navigation className="w-4 h-4 text-emerald-400" /> 300 km/day
                   </div>
-                  <div className="text-[11px] text-slate-400 font-medium">Standard Allowance</div>
+                  <div className="text-[11px] text-slate-300 font-medium">Standard Allowance</div>
                 </div>
 
-                <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center backdrop-blur-sm">
-                  <div className="text-xs text-green-400 font-bold flex items-center justify-center gap-1">
-                    <Award className="w-3.5 h-3.5 text-green-400" /> ₹0 Advance
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5 sm:p-3 text-center backdrop-blur-sm hover:border-emerald-500/30 transition-colors">
+                  <div className="text-xs text-emerald-400 font-bold flex items-center justify-center gap-1.5 mb-0.5">
+                    <Award className="w-4 h-4 text-emerald-400" /> ₹0 Advance
                   </div>
-                  <div className="text-[11px] text-slate-400 font-medium">Pay After Your Trip</div>
+                  <div className="text-[11px] text-slate-300 font-medium">Pay After Your Trip</div>
                 </div>
 
-                <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-center backdrop-blur-sm">
-                  <div className="text-xs text-green-400 font-bold flex items-center justify-center gap-1">
-                    <Phone className="w-3.5 h-3.5 text-green-400" /> 15 Min
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5 sm:p-3 text-center backdrop-blur-sm hover:border-emerald-500/30 transition-colors">
+                  <div className="text-xs text-emerald-400 font-bold flex items-center justify-center gap-1.5 mb-0.5">
+                    <Phone className="w-4 h-4 text-emerald-400" /> 15 Min
                   </div>
-                  <div className="text-[11px] text-slate-400 font-medium">Phone Confirmation</div>
+                  <div className="text-[11px] text-slate-300 font-medium">Phone Confirmation</div>
                 </div>
               </div>
             </motion.div>
@@ -622,14 +623,14 @@ export default function HomePage() {
 
             {/* Main Search Form */}
             <form onSubmit={handleSearchSubmit} className="p-6 sm:p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 sm:gap-5 mb-6">
                 {/* 1. Source (Pickup) */}
                 <div className="relative lg:col-span-3">
-                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">
+                  <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center h-4">
                     Pickup City / Area
                   </Label>
-                  <div className="flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-4 h-14 focus-within:bg-white focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 transition-all relative">
-                    <MapPin className="w-5 h-5 text-green-600 mr-2.5 flex-shrink-0" />
+                  <div className="flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-4 h-14 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all relative">
+                    <MapPin className="w-5 h-5 text-emerald-600 mr-2.5 flex-shrink-0" />
                     <Input
                       type="text"
                       value={source}
@@ -662,7 +663,7 @@ export default function HomePage() {
                               if (item.lat && item.lon) setSourceCoords({ lat: item.lat, lon: item.lon })
                               setShowSourceMenu(false)
                             }}
-                            className="px-4 py-2.5 hover:bg-green-50 hover:text-green-700 cursor-pointer text-sm font-semibold text-slate-700 transition-colors"
+                            className="px-4 py-2.5 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer text-sm font-semibold text-slate-700 transition-colors"
                           >
                             <div className="font-bold text-slate-900">{item.name}</div>
                             {item.sub && <div className="text-[11px] text-slate-400 font-normal">{item.sub}</div>}
@@ -675,15 +676,15 @@ export default function HomePage() {
 
                 {/* 2. Destination (Drop) */}
                 <div className="relative lg:col-span-3">
-                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">
+                  <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center h-4">
                     Destination City / Drop
                   </Label>
-                  <div className="flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-4 h-14 focus-within:bg-white focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 transition-all relative">
+                  <div className="flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-4 h-14 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all relative">
                     <Navigation className="w-5 h-5 text-emerald-500 mr-2.5 flex-shrink-0" />
                     <Input
                       type="text"
                       value={destination}
-                      placeholder="e.g. Goa, Hampi, Gokarna, Dandeli"
+                      placeholder="e.g. Goa, Hampi, Gokarna"
                       onChange={(e) => {
                         setDestination(e.target.value)
                         setShowDestMenu(true)
@@ -694,7 +695,7 @@ export default function HomePage() {
                       className="border-0 bg-transparent p-0 text-sm font-bold text-slate-900 focus-visible:ring-0 placeholder:font-medium placeholder:text-slate-400 w-full"
                     />
                     {calculatingDistance && (
-                      <RefreshCw className="w-4 h-4 text-green-600 animate-spin flex-shrink-0 ml-1" />
+                      <RefreshCw className="w-4 h-4 text-emerald-600 animate-spin flex-shrink-0 ml-1" />
                     )}
                   </div>
 
@@ -715,7 +716,7 @@ export default function HomePage() {
                               if (item.lat && item.lon) setDestCoords({ lat: item.lat, lon: item.lon })
                               setShowDestMenu(false)
                             }}
-                            className="px-4 py-2.5 hover:bg-green-50 hover:text-green-700 cursor-pointer text-sm font-semibold text-slate-700 transition-colors"
+                            className="px-4 py-2.5 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer text-sm font-semibold text-slate-700 transition-colors"
                           >
                             <div className="font-bold text-slate-900">{item.name}</div>
                             {item.sub && <div className="text-[11px] text-slate-400 font-normal">{item.sub}</div>}
@@ -726,16 +727,16 @@ export default function HomePage() {
                   </AnimatePresence>
                 </div>
 
-                {/* 3. Number of Days (Select / Stepper - Aligned Label) */}
+                {/* 3. Number of Days (Select / Stepper) */}
                 <div className="lg:col-span-2">
-                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">
+                  <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center h-4">
                     Number of Days
                   </Label>
                   <div className="flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-2.5 h-14 justify-between">
                     <button
                       type="button"
                       onClick={() => setDays((d) => Math.max(1, d - 1))}
-                      className="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center font-black text-slate-700 transition-colors shadow-sm cursor-pointer"
+                      className="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center font-black text-slate-700 transition-colors shadow-sm cursor-pointer flex-shrink-0"
                     >
                       -
                     </button>
@@ -743,14 +744,14 @@ export default function HomePage() {
                       <div className="text-sm font-black text-slate-900 leading-tight">
                         {days} {days === 1 ? "Day" : "Days"}
                       </div>
-                      <div className="text-[10px] text-green-700 font-bold leading-tight mt-0.5 whitespace-nowrap">
+                      <div className="text-[10px] text-emerald-700 font-bold leading-tight mt-0.5 whitespace-nowrap">
                         {days * 300} km package
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => setDays((d) => Math.min(15, d + 1))}
-                      className="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center font-black text-slate-700 transition-colors shadow-sm cursor-pointer"
+                      className="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center font-black text-slate-700 transition-colors shadow-sm cursor-pointer flex-shrink-0"
                     >
                       +
                     </button>
@@ -759,7 +760,7 @@ export default function HomePage() {
 
                 {/* 4. Pickup Date */}
                 <div className="lg:col-span-2">
-                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">
+                  <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center h-4">
                     Pickup Date
                   </Label>
                   <div
@@ -770,9 +771,9 @@ export default function HomePage() {
                         dateInputRef.current?.focus()
                       }
                     }}
-                    className="flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-4 h-14 focus-within:bg-white focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 transition-all cursor-pointer"
+                    className="flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-4 h-14 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all cursor-pointer"
                   >
-                    <Calendar className="w-5 h-5 text-green-600 mr-2 flex-shrink-0 pointer-events-none" />
+                    <Calendar className="w-5 h-5 text-emerald-600 mr-2 flex-shrink-0 pointer-events-none" />
                     <Input
                       ref={dateInputRef}
                       type="date"
@@ -792,15 +793,15 @@ export default function HomePage() {
 
                 {/* 5. Pickup Time */}
                 <div className="lg:col-span-2">
-                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">
+                  <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center h-4">
                     Pickup Time
                   </Label>
-                  <div className="flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-3 h-14 focus-within:bg-white focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 transition-all">
-                    <Clock className="w-5 h-5 text-slate-400 mr-2 flex-shrink-0" />
+                  <div className="flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-3.5 h-14 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all relative">
+                    <Clock className="w-5 h-5 text-slate-400 mr-2 flex-shrink-0 pointer-events-none" />
                     <select
                       value={pickupTime}
                       onChange={(e) => setPickupTime(e.target.value)}
-                      className="w-full bg-transparent border-0 text-sm font-bold text-slate-900 focus:outline-none cursor-pointer"
+                      className="w-full bg-transparent border-0 text-sm font-bold text-slate-900 focus:outline-none cursor-pointer appearance-none pr-6"
                     >
                       {TIME_SLOTS.map((t) => (
                         <option key={t} value={t}>
@@ -808,6 +809,7 @@ export default function HomePage() {
                         </option>
                       ))}
                     </select>
+                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 pointer-events-none" />
                   </div>
                 </div>
               </div>
@@ -824,7 +826,7 @@ export default function HomePage() {
                     onClick={() => handleQuickDestinationSelect(dest.name, dest.km, dest.days)}
                     className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-all duration-150 cursor-pointer ${
                       destination.toLowerCase().includes(dest.name.toLowerCase().split(" ")[0])
-                        ? "bg-green-600 text-white border-green-600 shadow-sm"
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
                         : "bg-slate-100/80 text-slate-600 border-slate-200 hover:bg-slate-200 hover:text-slate-900"
                     }`}
                   >
@@ -834,18 +836,18 @@ export default function HomePage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <ShieldCheck className="w-4 h-4 text-green-600 flex-shrink-0" />
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-5 border-t border-slate-100">
+                <div className="flex items-center gap-2.5 bg-emerald-50/90 border border-emerald-200/80 rounded-2xl px-4 py-3 text-xs text-emerald-900 font-medium w-full sm:w-auto">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                   <span suppressHydrationWarning>
-                    Package includes {days * 300} km. If crossed, extra km billed as per vehicle per-km rate. Zero advance.
+                    Package includes <strong>{days * 300} km</strong> ({days} {days === 1 ? "day" : "days"}). Extra km billed at per-km rate. <strong>Zero advance</strong>.
                   </span>
                 </div>
 
                 <Button
                   type="submit"
                   size="lg"
-                  className="w-full sm:w-auto min-w-[260px] h-14 bg-slate-900 hover:bg-green-600 text-white font-black text-base rounded-2xl shadow-xl hover:shadow-green-600/25 transition-all hover:scale-[1.02] cursor-pointer"
+                  className="w-full sm:w-auto min-w-[270px] h-14 bg-slate-900 hover:bg-emerald-600 text-white font-black text-base rounded-2xl shadow-xl hover:shadow-emerald-600/25 transition-all hover:scale-[1.02] cursor-pointer flex-shrink-0"
                 >
                   Calculate &amp; Compare Cabs
                   <ArrowRight className="w-5 h-5 ml-2" />
@@ -1818,14 +1820,8 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 py-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
             <div className="md:col-span-2">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg shadow-green-600/30">
-                  <span className="text-white font-black text-xl leading-none tracking-tight">R</span>
-                </div>
-                <div className="leading-none flex items-center tracking-tight">
-                  <span className="font-black text-2xl text-white">RIDE</span>
-                  <span className="font-black text-2xl text-green-400">VO</span>
-                </div>
+              <div className="mb-4">
+                <RidevoLogo size="lg" theme="dark" showTagline={true} />
               </div>
               <p className="text-slate-400 text-sm leading-relaxed max-w-sm mb-5">
                 Hubli&apos;s direct outstation cab network. Connecting travelers with verified tied-up local operators with

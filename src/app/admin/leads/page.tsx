@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast, Toaster } from "sonner"
+import { RidevoLogo } from "@/components/RidevoLogo"
 import type { StoredTripRequest } from "@/app/api/trip-requests/route"
 
 // ── Authorized Operator Credentials ─────────────────────────────────────────
@@ -238,16 +239,8 @@ export default function OperatorLeadsPage() {
 
         <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10">
           {/* Logo */}
-          <div className="flex items-center justify-center gap-2.5 mb-6">
-            <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-600/30">
-              <span className="text-white font-black text-xl leading-none" style={{ fontFamily: "'Noto Sans Kannada',sans-serif" }}>
-                ನ
-              </span>
-            </div>
-            <div className="leading-none text-left">
-              <span className="font-black text-2xl text-white tracking-tight">namma</span>
-              <span className="font-black text-2xl text-green-400 tracking-widest uppercase">CAB</span>
-            </div>
+          <div className="flex justify-center mb-6">
+            <RidevoLogo size="lg" theme="dark" showTagline={true} />
           </div>
 
           <div className="text-center mb-6">
