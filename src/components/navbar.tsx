@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { getCookie, deleteCookie } from "cookies-next"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, LayoutDashboard, Menu, X } from "lucide-react"
+import { User, LogOut, LayoutDashboard, Menu, X, Phone } from "lucide-react"
 
 export default function Navbar() {
   const router   = useRouter()
@@ -49,24 +49,23 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0">
-            <div className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-600/30">
-              <span className="text-white font-black text-lg leading-none" style={{fontFamily:"'Noto Sans Kannada',sans-serif"}}>ನ</span>
+            <div className="w-9 h-9 bg-gradient-to-br from-green-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg shadow-green-600/30 group-hover:scale-105 transition-transform">
+              <span className="text-white font-black text-xl leading-none tracking-tight">R</span>
             </div>
-            <div className="leading-none">
-              <span className="font-black text-xl text-white tracking-tight">namma</span>
-              <span className="font-black text-xl text-green-400 tracking-widest uppercase">CAB</span>
+            <div className="leading-none flex items-center tracking-tight">
+              <span className="font-black text-2xl text-white">RIDE</span>
+              <span className="font-black text-2xl text-green-400">VO</span>
             </div>
           </Link>
 
           {/* Desktop nav */}
           <nav className="hidden md:flex gap-8 font-semibold text-sm">
-            <a href="#search"       className="text-slate-300 hover:text-green-400 transition-colors">Book a Ride</a>
+            <a href="#planner" className="text-slate-300 hover:text-green-400 transition-colors">Book a Ride</a>
+            <a href="#fleet" className="text-slate-300 hover:text-green-400 transition-colors">Fleet &amp; Rates</a>
             <a href="#how-it-works" className="text-slate-300 hover:text-green-400 transition-colors">How it Works</a>
-            <a href="#fleet"        className="text-slate-300 hover:text-green-400 transition-colors">Our Fleet</a>
-            <Link href="/agent-signup" className="text-slate-300 hover:text-green-400 transition-colors">List Your Cabs</Link>
           </nav>
 
-          {/* Desktop auth */}
+          {/* Desktop Booking Helpline / Account */}
           <div className="hidden md:flex gap-3 items-center">
             {loggedIn ? (
               <>
@@ -86,18 +85,13 @@ export default function Navbar() {
                 </Button>
               </>
             ) : (
-              <>
-                <Link href="/login">
-                  <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full px-5 font-semibold text-sm">
-                    Sign in
-                  </Button>
-                </Link>
-                <Link href="/agent-signup">
-                  <Button className="bg-green-600 hover:bg-green-500 text-white rounded-full px-6 font-bold text-sm shadow-lg shadow-green-600/30">
-                    Partner with us
-                  </Button>
-                </Link>
-              </>
+              <a
+                href="tel:+918884856868"
+                className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white rounded-full px-5 py-2.5 font-bold text-sm shadow-lg shadow-green-600/30 transition-all hover:scale-105"
+              >
+                <Phone className="w-4 h-4" />
+                <span>+91 8884856868</span>
+              </a>
             )}
           </div>
 
@@ -123,10 +117,9 @@ export default function Navbar() {
                 </div>
               </div>
             )}
-            <a href="#search"       className="font-semibold text-slate-300 hover:text-green-400 py-2 transition-colors">Book a Ride</a>
+            <a href="#planner" className="font-semibold text-slate-300 hover:text-green-400 py-2 transition-colors">Book a Ride</a>
+            <a href="#fleet" className="font-semibold text-slate-300 hover:text-green-400 py-2 transition-colors">Fleet &amp; Rates</a>
             <a href="#how-it-works" className="font-semibold text-slate-300 hover:text-green-400 py-2 transition-colors">How it Works</a>
-            <a href="#fleet"        className="font-semibold text-slate-300 hover:text-green-400 py-2 transition-colors">Our Fleet</a>
-            <Link href="/agent-signup" className="font-semibold text-slate-300 hover:text-green-400 py-2 transition-colors">List Your Cabs</Link>
             <div className="border-t border-white/10 pt-4 flex flex-col gap-3 mt-2">
               {loggedIn ? (
                 <>
@@ -140,14 +133,13 @@ export default function Navbar() {
                   </Button>
                 </>
               ) : (
-                <>
-                  <Link href="/login">
-                    <Button variant="outline" className="w-full border-white/20 text-slate-300 hover:bg-white/10 rounded-xl font-semibold">Sign in</Button>
-                  </Link>
-                  <Link href="/agent-signup">
-                    <Button className="w-full bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold">Partner with us</Button>
-                  </Link>
-                </>
+                <a
+                  href="tel:+918884856868"
+                  className="w-full bg-green-600 hover:bg-green-500 text-white rounded-xl py-3 font-bold text-sm flex items-center justify-center gap-2 shadow-lg"
+                >
+                  <Phone className="w-4 h-4" />
+                  <span>Call: +91 8884856868</span>
+                </a>
               )}
             </div>
           </div>

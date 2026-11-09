@@ -138,7 +138,7 @@ export default function AgentMyVehiclesPage() {
 
   // Form
   const { register, handleSubmit, formState: { errors }, reset } = useForm<VehicleForm>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
   })
 
   // ── Load agent ID ────────────────────────────────────────────────────

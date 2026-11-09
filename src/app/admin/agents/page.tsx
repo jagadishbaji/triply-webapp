@@ -517,7 +517,7 @@ export default function AgentsPage() {
                   )}/>
                 <div>
                   <Label htmlFor="add-isActive" className="text-sm font-semibold text-slate-700 cursor-pointer">
-                    Activate immediately
+                    Activate immediately  
                   </Label>
                   <p className="text-xs text-slate-400">Agent can login and list vehicles right away</p>
                 </div>

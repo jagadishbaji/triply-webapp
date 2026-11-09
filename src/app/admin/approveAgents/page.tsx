@@ -116,11 +116,11 @@ export default function ApproveAgentsPage() {
     setFiltered(
       q
         ? agents.filter((a) =>
-            a.name.toLowerCase().includes(q) ||
-            a.email.toLowerCase().includes(q) ||
-            a.phoneNumber.includes(q) ||
-            a.licenseNumber.toLowerCase().includes(q) ||
-            a.address.toLowerCase().includes(q)
+            (a.name || a.businessName || "").toLowerCase().includes(q) ||
+            (a.email || "").toLowerCase().includes(q) ||
+            (a.phoneNumber || "").includes(q) ||
+            (a.licenseNumber || "").toLowerCase().includes(q) ||
+            (a.address || "").toLowerCase().includes(q)
           )
         : agents
     );
@@ -442,7 +442,7 @@ export default function ApproveAgentsPage() {
             )}
 
             <p className="text-sm text-slate-600 mb-5">
-              Approving will send them a notification and allow them to start listing their vehicles on <strong>NammaCab</strong>.
+              Approving will send them a notification and allow them to start listing their vehicles on <strong>RIDEVO</strong>.
             </p>
 
             <DialogFooter className="gap-2">
@@ -549,7 +549,7 @@ export default function ApproveAgentsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                   <DetailRow icon={IconMail}    label="Email"          value={selected.email} />
                   <DetailRow icon={IconPhone}   label="Mobile"         value={selected.phoneNumber} />
-                  <DetailRow icon={IconLicense} label="License / Reg." value={selected.licenseNumber} />
+                  <DetailRow icon={IconLicense} label="License / Reg." value={selected.licenseNumber || "—"} />
                   <DetailRow icon={IconClock}   label="Applied on"     value={
                     isNaN(new Date(selected.createdAt).getTime())
                       ? "—"

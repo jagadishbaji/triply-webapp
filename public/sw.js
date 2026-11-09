@@ -1,7 +1,7 @@
-// NammaCAB Service Worker v1.0
+// RIDEVO Service Worker v1.0
 // Handles: offline caching, background sync, push notifications
 
-const CACHE_VERSION = 'nammacab-v1';
+const CACHE_VERSION = 'ridevo-v1';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const API_CACHE = `${CACHE_VERSION}-api`;
@@ -131,7 +131,7 @@ async function offlineFallback(request) {
 
 // ── Push Notifications ────────────────────────────────────────────────────────
 self.addEventListener('push', (event) => {
-  let data = { title: 'NammaCAB', body: 'You have a new notification', icon: '/icons/icon-192x192.png' };
+  let data = { title: 'RIDEVO', body: 'You have a new notification', icon: '/icons/icon-192x192.png' };
   try {
     data = { ...data, ...event.data.json() };
   } catch {}

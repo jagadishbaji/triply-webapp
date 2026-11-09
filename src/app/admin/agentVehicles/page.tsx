@@ -138,7 +138,7 @@ export default function AgentVehiclesPage() {
 
   // Form
   const { register, handleSubmit, formState: { errors }, reset } = useForm<VehicleForm>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
   })
 
   // ── Load agents + vehicle types on mount ────────────────────────────

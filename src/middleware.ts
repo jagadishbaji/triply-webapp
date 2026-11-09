@@ -6,15 +6,25 @@ export function middleware(req: NextRequest) {
   const role = req.cookies.get("role")?.value;
   const { pathname } = req.nextUrl;
 
+  // ── STEP 0: Allow all API routes & static assets ─────────────────────
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
   // ── STEP 1: Always allow these paths — no logic, no redirect, ever ───
   const alwaysAllow = [
+    "/robots.txt",          // ← Critical for Googlebot SEO crawling
+    "/sitemap.xml",         // ← Critical for Googlebot search indexing
+    "/manifest.json",       // ← PWA manifest
+    "/offline.html",        // ← Offline fallback
     "/agent-signup",
     "/user-signup",
     "/forgot-password",
     "/reset-password",
     "/user/vehicles",
-    "/terms",      // ← Added Terms & Conditions
-    "/privacy",    // ← Added Privacy Policy
+    "/admin/leads",         // ← Allow operator leads dashboard
+    "/terms",               // ← Added Terms & Conditions
+    "/privacy",             // ← Added Privacy Policy
     "/nammacab-banner.mp4", // ← Allow video asset
   ];
 
@@ -57,6 +67,6 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js)).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|txt|xml|json)).*)",
   ],
 };

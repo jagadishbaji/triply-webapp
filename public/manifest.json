@@ -1,7 +1,7 @@
 {
-  "name": "NammaCAB - Hubli-Dharwad Cab Marketplace",
-  "short_name": "NammaCAB",
-  "description": "Book intercity cabs from Hubli-Dharwad. Transparent pricing, verified operators.",
+  "name": "RIDEVO - Hubli-Dharwad Outstation Cab Network",
+  "short_name": "RIDEVO",
+  "description": "Book verified outstation cabs from Hubli-Dharwad on RIDEVO. Fixed transparent rates, verified fleet owners.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0f1e",

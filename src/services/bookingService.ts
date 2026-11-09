@@ -81,6 +81,9 @@ export interface BookingDetail extends BookingResponse {
   
 }
 
+export type AgentBooking = BookingDetail;
+export type MyBooking = BookingDetail;
+
 export type BookingStatus =
   | "pending" | "confirmed" | "in_progress" | "completed" | "cancelled";
 

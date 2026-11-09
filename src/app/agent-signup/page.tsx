@@ -172,12 +172,12 @@ export default function AgentSignupPage() {
         {/* Logo */}
         <div className="relative z-10">
           <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0 w-fit">
-            <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/20">
-              <span className="text-[#02180d] font-black text-xl leading-none" style={{fontFamily:"'Noto Sans Kannada',sans-serif"}}>ನ</span>
+            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-700 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/20">
+              <span className="text-white font-black text-xl leading-none tracking-tight">R</span>
             </div>
-            <div className="leading-none">
-              <span className="font-black text-2xl text-white tracking-tight">namma</span>
-              <span className="font-black text-2xl text-green-400 tracking-widest uppercase">CAB</span>
+            <div className="leading-none flex items-center tracking-tight">
+              <span className="font-black text-2xl text-white">RIDE</span>
+              <span className="font-black text-2xl text-green-400">VO</span>
             </div>
           </Link>
         </div>
@@ -187,7 +187,7 @@ export default function AgentSignupPage() {
           <h1 className="text-4xl xl:text-5xl font-bold text-white leading-[1.1] tracking-tight mb-8">
             Partner with <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300">
-              NammaCab
+              RIDEVO
             </span>
           </h1>
           
@@ -208,7 +208,7 @@ export default function AgentSignupPage() {
 
         {/* Footer text */}
         <div className="relative z-10 mt-auto text-emerald-100/40 text-sm">
-          © {new Date().getFullYear()} NammaCab Technologies. All rights reserved.
+          © {new Date().getFullYear()} RIDEVO Technologies. All rights reserved.
         </div>
       </div>
 
@@ -218,12 +218,12 @@ export default function AgentSignupPage() {
         {/* Mobile Logo */}
         <div className="lg:hidden absolute top-6 left-6">
           <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0">
-            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center shadow-md shadow-green-600/20">
-              <span className="text-white font-black text-base leading-none" style={{fontFamily:"'Noto Sans Kannada',sans-serif"}}>ನ</span>
+            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-700 rounded-lg flex items-center justify-center shadow-md shadow-green-600/20">
+              <span className="text-white font-black text-base leading-none tracking-tight">R</span>
             </div>
-            <div className="leading-none">
-              <span className="font-black text-xl text-slate-900 tracking-tight">namma</span>
-              <span className="font-black text-xl text-green-600 tracking-widest uppercase">CAB</span>
+            <div className="leading-none flex items-center tracking-tight">
+              <span className="font-black text-xl text-slate-900">RIDE</span>
+              <span className="font-black text-xl text-green-600">VO</span>
             </div>
           </Link>
         </div>

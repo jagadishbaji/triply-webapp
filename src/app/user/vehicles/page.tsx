@@ -211,7 +211,7 @@ function BookingSheet({ vehicle, fareInfo, pickup, destination, date, time, trip
                   </div>
                 </div>
                 <Label className="text-[11px] sm:text-xs font-medium text-slate-600 cursor-pointer leading-relaxed flex-1 pointer-events-none">
-                  I agree to NammaCab's <span className="text-green-600 font-bold hover:underline pointer-events-auto" onClick={(e) => {e.stopPropagation(); window.open('/terms','_blank')}}>Terms</span> & <span className="text-green-600 font-bold hover:underline pointer-events-auto" onClick={(e) => {e.stopPropagation(); window.open('/privacy','_blank')}}>Privacy Policy</span>. Payment is handled directly with the operator.
+                  I agree to RIDEVO's <span className="text-green-600 font-bold hover:underline pointer-events-auto" onClick={(e) => {e.stopPropagation(); window.open('/terms','_blank')}}>Terms</span> & <span className="text-green-600 font-bold hover:underline pointer-events-auto" onClick={(e) => {e.stopPropagation(); window.open('/privacy','_blank')}}>Privacy Policy</span>. Payment is handled directly with the operator.
                 </Label>
               </div>
               {errors.terms && <p className="text-[10px] text-red-600 font-bold -mt-2 sm:-mt-3 mb-3 text-center">{errors.terms}</p>}

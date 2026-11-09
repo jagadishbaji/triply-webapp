@@ -2,7 +2,10 @@ import { apiFetch } from "@/lib/api";
 import { deleteCookie } from "cookies-next";
 
 export interface ProfileUpdateDto {
+  id?: string;
   fullName?: string;
+  email?: string;
+  role?: string;
   mobile?: string;
   avatarUrl?: string;
   preferredLanguage?: string;

@@ -153,7 +153,7 @@ export function SiteHeader() {
         {role === "agent" && walletPoints !== null && (
           <div 
             className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-xl text-green-700 font-semibold text-sm shadow-sm cursor-default transition-all hover:bg-green-100"
-            title="Your available NammaCab points"
+            title="Your available RIDEVO points"
           >
             <Wallet className="w-4 h-4 text-green-600" />
             <span>₹{walletPoints.toLocaleString('en-IN')} </span>

@@ -196,7 +196,7 @@ export default function AdminDashboard() {
               <h1 className="text-2xl font-black text-slate-900">
                 Good {greeting}, {adminName} 👋
               </h1>
-              <p className="text-sm text-slate-500 mt-0.5">Here's what's happening on nammaCab today.</p>
+              <p className="text-sm text-slate-500 mt-0.5">Here's what's happening on RIDEVO today.</p>
             </div>
             <Button variant="outline" onClick={fetchDashboard}
               className="h-9 px-4 border-slate-200 text-slate-600 rounded-xl flex items-center gap-2 self-start sm:self-auto">

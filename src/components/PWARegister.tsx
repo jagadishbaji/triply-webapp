@@ -84,7 +84,7 @@ function InstallBanner() {
         {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontWeight: 700, color: "#f1f5f9", fontSize: "14px", margin: "0 0 4px" }}>
-            Install NammaCAB
+            Install RIDEVO
           </p>
           <p style={{ color: "#94a3b8", fontSize: "12px", margin: "0 0 12px", lineHeight: 1.5 }}>
             Add to home screen for faster booking, offline access &amp; push notifications

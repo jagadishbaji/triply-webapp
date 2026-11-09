@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowLeft, ShieldCheck } from "lucide-react"
+import { ArrowLeft, ShieldCheck, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function TermsPage() {
@@ -21,7 +21,7 @@ export default function TermsPage() {
             </Button>
           </Link>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-green-400 text-xs font-semibold uppercase tracking-wider mb-4">
-            <ShieldCheck className="w-3.5 h-3.5" /> Legal Documentation
+            <FileText className="w-3.5 h-3.5" /> Legal Terms
           </div>
           <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">Terms and Conditions</h1>
           <p className="text-emerald-100/60">Last Updated: {lastUpdated}</p>
@@ -35,17 +35,17 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">1. Introduction & Platform Status</h2>
             <p className="mb-3">
-              Welcome to NammaCab. These Terms and Conditions govern your use of the NammaCab website, progressive web application, and related services (collectively, the "Platform").
+              Welcome to RIDEVO. These Terms and Conditions govern your use of the RIDEVO website, progressive web application, and related services (collectively, the "Platform").
             </p>
             <p className="mb-3 font-semibold text-slate-900 bg-slate-50 p-4 border-l-4 border-green-500 rounded-r-lg">
-              Important: NammaCab operates strictly as an Information Technology Intermediary under Section 79 of the Information Technology Act, 2000. NammaCab is a technology platform that connects users ("Travellers") with independent third-party vehicle operators and travel agencies ("Operators"). NammaCab does not provide transportation services, nor does it function as a transport carrier.
+              Important: RIDEVO operates strictly as an Information Technology Intermediary under Section 79 of the Information Technology Act, 2000. RIDEVO is a technology platform that connects users ("Travellers") with independent third-party vehicle operators and travel agencies ("Operators"). RIDEVO does not provide transportation services, nor does it function as a transport carrier.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">2. No Employer-Employee Relationship</h2>
             <p>
-              The Operators, drivers, and fleet owners listed on the Platform are independent contractors. There is no joint venture, partnership, employment, or agency relationship created between you, NammaCab, or any Operator as a result of these Terms or use of the Platform.
+              The Operators, drivers, and fleet owners listed on the Platform are independent contractors. There is no joint venture, partnership, employment, or agency relationship created between you, RIDEVO, or any Operator as a result of these Terms or use of the Platform.
             </p>
           </section>
 
@@ -54,18 +54,18 @@ export default function TermsPage() {
             <ul className="list-disc pl-5 space-y-2 marker:text-green-500">
               <li>You agree to provide accurate, current, and complete information during the booking process.</li>
               <li>You understand that the final fare may vary based on actual distance travelled, toll taxes, state taxes, and parking fees, which are to be settled directly with the Operator.</li>
-              <li>NammaCab relies on the information provided by Operators regarding vehicle type, AC/Non-AC status, and pricing. While we strive for accuracy, we do not warrant the exact condition of the vehicle upon arrival.</li>
+              <li>RIDEVO relies on the information provided by Operators regarding vehicle type, AC/Non-AC status, and pricing. While we strive for accuracy, we do not warrant the exact condition of the vehicle upon arrival.</li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">4. Operator (Agent) Obligations & Due Diligence</h2>
-            <p className="mb-3">By registering as an Operator on NammaCab, you represent, warrant, and agree that:</p>
+            <p className="mb-3">By registering as an Operator on RIDEVO, you represent, warrant, and agree that:</p>
             <ul className="list-disc pl-5 space-y-2 marker:text-green-500">
               <li>You possess all necessary commercial licenses, permits, approvals, and authority to provide transportation services in your operating region.</li>
               <li>You will maintain valid, comprehensive commercial vehicle insurance that covers third-party liability and passenger safety at all times.</li>
-              <li>You are solely responsible for conducting background checks on your drivers. NammaCab bears no responsibility for the actions, omissions, or behavior of your drivers.</li>
-              <li><strong>Indemnification:</strong> You agree to indemnify, defend, and hold harmless NammaCab and its affiliates from any claims, liabilities, damages, or legal actions arising out of your services, accidents, or breach of these terms.</li>
+              <li>You are solely responsible for conducting background checks on your drivers. RIDEVO bears no responsibility for the actions, omissions, or behavior of your drivers.</li>
+              <li><strong>Indemnification:</strong> You agree to indemnify, defend, and hold harmless RIDEVO and its affiliates from any claims, liabilities, damages, or legal actions arising out of your services, accidents, or breach of these terms.</li>
             </ul>
           </section>
 
@@ -73,7 +73,7 @@ export default function TermsPage() {
             <h2 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">5. Limitation of Liability</h2>
             <p className="mb-3 uppercase text-xs font-bold tracking-wider text-slate-400">Please read carefully</p>
             <p className="mb-3">
-              To the maximum extent permitted by applicable law, NammaCab shall not be liable for any indirect, incidental, special, exemplary, punitive, or consequential damages, including but not limited to:
+              To the maximum extent permitted by applicable law, RIDEVO shall not be liable for any indirect, incidental, special, exemplary, punitive, or consequential damages, including but not limited to:
             </p>
             <ul className="list-disc pl-5 space-y-2 marker:text-green-500 mb-4">
               <li>Personal injury, property damage, or accidents arising out of or related to the transportation services provided by the Operator.</li>
@@ -88,11 +88,11 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">6. Grievance Redressal</h2>
             <p className="mb-3">
-              In accordance with the Consumer Protection (E-Commerce) Rules, 2020, NammaCab has a dedicated Grievance Officer. If you face severe issues with an Operator, you may report them to us, and we will take necessary platform-level action (including suspension of the Operator) to maintain platform integrity.
+              In accordance with the Consumer Protection (E-Commerce) Rules, 2020, RIDEVO has a dedicated Grievance Officer. If you face severe issues with an Operator, you may report them to us, and we will take necessary platform-level action (including suspension of the Operator) to maintain platform integrity.
             </p>
             <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mt-4">
               <p className="font-semibold text-slate-900">Contact Information:</p>
-              <p>Email: legal@nammacab.in</p>
+              <p>Email: legal@ridevo.in</p>
               <p>Phone: +91-8884856868</p>
             </div>
           </section>

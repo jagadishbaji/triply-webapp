@@ -8,6 +8,8 @@ export interface CreatePriceDTO {
   agentVehicleId: string; tripTypeId: string; localPerKmPrice?: number; localMinKm?: number; airportPrice?: number; outPerKmPrice?: number; outMinKm?: number; driverDayAllowance?: number; driverNightAllowance?: number; tollIncluded?: boolean;
 }
 
+export type CreatePriceDetailsByTrip = CreatePriceDTO;
+
 export interface CabSearchResultDto {
   vehicleDetails: PriceDetailsByTrip; distanceKm: number; estimatedDurationMins: number; estimatedFare: number; extraPickupKm: number; extraPickupCharge: number;
 }

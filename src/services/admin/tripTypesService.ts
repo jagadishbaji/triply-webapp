@@ -13,7 +13,7 @@ export async function gettripTypes(): Promise<tripType[]> {
   return apiFetch<tripType[]>("/TripTypes", { method: "GET" }, false);
 }
 
-export async function addtripType(payload: Omit<tripType, "id" | "createdAt" | "updatedAt">): Promise<tripType> {
+export async function addtripType(payload: Partial<tripType> & { name: string }): Promise<tripType> {
   return apiFetch<tripType>("/TripTypes", {
     method: "POST",
     body: JSON.stringify(payload),

@@ -120,7 +120,7 @@ export default function LoginPage() {
 
         {/* Footer text (Pushed to bottom) */}
         <div className="relative z-10 mt-auto text-emerald-100/40 text-sm">
-          © {new Date().getFullYear()} NammaCab Technologies. All rights reserved.
+          © {new Date().getFullYear()} RIDEVO Technologies. All rights reserved.
         </div>
       </div>
 

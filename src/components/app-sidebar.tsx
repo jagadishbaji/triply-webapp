@@ -231,7 +231,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 {/* Logo mark */}
                 
                 <div className="flex flex-col leading-none">
-                  <img src="/nammacab-logo-compact.svg" alt="NammaCab" height={36} />
+                  <img src="/nammacab-logo-compact.svg" alt="RIDEVO" height={36} />
                   {/* <span className="text-[10px] text-slate-400 font-medium mt-0.5">
                     {user.role === "admin" ? "Admin Portal" : "Agent Portal"}
                   </span> */}

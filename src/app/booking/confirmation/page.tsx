@@ -24,7 +24,7 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string; ic
   pending:     { label:"Pending Confirmation", color:"text-amber-700",  bg:"bg-amber-50  border-amber-200",  icon:Clock,        msg:"The operator will review and call you shortly to confirm." },
   confirmed:   { label:"Confirmed",            color:"text-green-700",  bg:"bg-green-50  border-green-200",  icon:CheckCircle2, msg:"Your booking is confirmed! Operator will contact you before pickup." },
   in_progress: { label:"Ride In Progress",     color:"text-blue-700",   bg:"bg-blue-50   border-blue-200",   icon:Car,          msg:"Your ride is currently in progress." },
-  completed:   { label:"Completed",            color:"text-slate-700",  bg:"bg-slate-50  border-slate-200",  icon:CheckCircle2, msg:"Your ride has been completed. Thank you for choosing NammaCab!" },
+  completed:   { label:"Completed",            color:"text-slate-700",  bg:"bg-slate-50  border-slate-200",  icon:CheckCircle2, msg:"Your ride has been completed. Thank you for choosing RIDEVO!" },
   cancelled:   { label:"Cancelled",            color:"text-red-700",    bg:"bg-red-50    border-red-200",    icon:AlertCircle,  msg:"This booking was cancelled. Please book again." },
 }
 
@@ -77,9 +77,9 @@ function ConfirmationInner() {
   const StatusIcon = meta.icon
 
   const handleShare = () => {
-    const text = `My NammaCab booking: ${ref}\nPickup: ${detail?.pickupLocation ?? "—"}\nDate: ${fmt(detail?.pickupDateTime)}\nStatus: ${meta.label}`
+    const text = `My RIDEVO booking: ${ref}\nPickup: ${detail?.pickupLocation ?? "—"}\nDate: ${fmt(detail?.pickupDateTime)}\nStatus: ${meta.label}`
     if (navigator.share) {
-      navigator.share({ title: "NammaCab Booking", text })
+      navigator.share({ title: "RIDEVO Booking", text })
     } else {
       navigator.clipboard.writeText(text)
       setShareOk(true)
@@ -88,7 +88,7 @@ function ConfirmationInner() {
   }
 
   const whatsappMsg = encodeURIComponent(
-    `Hi, I have booked a cab via NammaCab.\nBooking Ref: ${ref}\nName: ${detail?.customerName ?? ""}\nPhone: ${detail?.customerPhone ?? ""}\nPickup: ${detail?.pickupLocation ?? ""}\nDate: ${fmt(detail?.pickupDateTime)}`
+    `Hi, I have booked a cab via RIDEVO.\nBooking Ref: ${ref}\nName: ${detail?.customerName ?? ""}\nPhone: ${detail?.customerPhone ?? ""}\nPickup: ${detail?.pickupLocation ?? ""}\nDate: ${fmt(detail?.pickupDateTime)}`
   )
 
   return (
@@ -101,10 +101,10 @@ function ConfirmationInner() {
           <ArrowLeft className="w-5 h-5 text-slate-600"/>
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-green-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-black text-sm" style={{fontFamily:"'Noto Sans Kannada',sans-serif"}}>ನ</span>
+          <div className="w-7 h-7 bg-gradient-to-br from-green-500 to-emerald-700 rounded-lg flex items-center justify-center">
+            <span className="text-white font-black text-sm">R</span>
           </div>
-          <span className="font-black text-slate-900">namma<span className="text-green-600 tracking-widest uppercase">CAB</span></span>
+          <span className="font-black text-slate-900 tracking-tight">RIDE<span className="text-green-600">VO</span></span>
         </div>
       </header>
 

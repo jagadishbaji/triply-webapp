@@ -25,7 +25,7 @@ export async function getVehicleTypes(): Promise<vehicleType[]> {
   return apiFetch<vehicleType[]>("/VehicleTypes", { method: "GET" }, false);
 }
 
-export async function addVehicleType(payload: Omit<vehicleType, "id" | "createdAt">): Promise<vehicleType> {
+export async function addVehicleType(payload: Partial<vehicleType> & { name: string }): Promise<vehicleType> {
   return apiFetch<vehicleType>("/VehicleTypes", {
     method: "POST",
     body: JSON.stringify(payload),

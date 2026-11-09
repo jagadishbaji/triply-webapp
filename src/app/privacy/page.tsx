@@ -35,10 +35,10 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">1. Introduction</h2>
             <p className="mb-3">
-              NammaCab Technologies ("NammaCab", "we", "us", or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our platform and use our services.
+              RIDEVO Technologies ("RIDEVO", "we", "us", or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our platform and use our services.
             </p>
             <p>
-              By accessing or using NammaCab, you consent to the data practices described in this policy. If you do not agree with the terms of this privacy policy, please do not access the platform.
+              By accessing or using RIDEVO, you consent to the data practices described in this policy. If you do not agree with the terms of this privacy policy, please do not access the platform.
             </p>
           </section>
 
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
               <li>Facilitate the creation of and secure your account.</li>
               <li>Process and transmit your booking requests to the selected vehicle Operators.</li>
               <li>Send transactional communications, such as booking confirmations, via Email, SMS, or WhatsApp.</li>
-              <li>Monitor and analyze usage and trends to improve your experience with NammaCab.</li>
+              <li>Monitor and analyze usage and trends to improve your experience with RIDEVO.</li>
               <li>Prevent fraudulent transactions, monitor against theft, and protect against criminal activity.</li>
             </ul>
           </section>
@@ -107,8 +107,8 @@ export default function PrivacyPage() {
               <ShieldCheck className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
               <div>
                 <p className="font-bold text-slate-900 mb-1">Grievance Officer</p>
-                <p className="text-sm">NammaCab Technologies</p>
-                <p className="text-sm">Email: privacy@nammacab.in</p>
+                <p className="text-sm">RIDEVO Technologies</p>
+                <p className="text-sm">Email: privacy@ridevo.in</p>
                 <p className="text-sm">Phone: +91-8884856868</p>
               </div>
             </div>
