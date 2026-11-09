@@ -28,6 +28,11 @@ export function middleware(req: NextRequest) {
     "/nammacab-banner.mp4", // ← Allow video asset
   ];
 
+  // Pass-through Google Search Console verification files
+  if (pathname.startsWith("/google") && pathname.endsWith(".html")) {
+    return NextResponse.next();
+  }
+
   if (alwaysAllow.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return NextResponse.next(); // ← hard pass-through, nothing else runs
   }
@@ -67,6 +72,6 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|txt|xml|json)).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|txt|xml|json|html)).*)",
   ],
 };
