@@ -1913,11 +1913,6 @@ export default function HomePage() {
                   </a>
                 </li>
                 <li>
-                  <Link href="/admin/leads" className="text-green-400 hover:text-green-300 font-bold flex items-center gap-1">
-                    Operator Live Desk <ArrowUpRight className="w-3 h-3" />
-                  </Link>
-                </li>
-                <li>
                   <Link href="/terms" className="hover:text-green-400 transition-colors">
                     Terms &amp; Conditions
                   </Link>
@@ -1939,9 +1934,6 @@ export default function HomePage() {
               </Link>
               <Link href="/terms" className="hover:text-green-400 transition-colors">
                 Terms &amp; Conditions
-              </Link>
-              <Link href="/admin/leads" className="text-green-400 hover:text-green-300 font-bold">
-                Operator Inquiries Desk
               </Link>
             </div>
           </div>

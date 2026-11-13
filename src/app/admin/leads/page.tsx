@@ -15,10 +15,6 @@ import { toast, Toaster } from "sonner"
 import { RidevoLogo } from "@/components/RidevoLogo"
 import type { StoredTripRequest } from "@/app/api/trip-requests/route"
 
-// ── Authorized Operator Credentials ─────────────────────────────────────────
-const AUTHORIZED_USERNAME = "jagadishbaji@gmail.com"
-const AUTHORIZED_PASSWORD = "Jaiprabhu@77"
-
 export default function OperatorLeadsPage() {
   const [mounted, setMounted] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -46,10 +42,11 @@ export default function OperatorLeadsPage() {
   // 1. Check existing session on mount
   useEffect(() => {
     setMounted(true)
-    const saved = sessionStorage.getItem("ridevo_operator_auth") || sessionStorage.getItem("nammacab_operator_auth")
-    if (saved === "true") {
-      setIsAuthenticated(true)
-    }
+    // The session lives in a secure server-set cookie; ask the server if we are signed in.
+    fetch("/api/operator/login")
+      .then((r) => r.json())
+      .then((d) => setIsAuthenticated(Boolean(d?.authenticated)))
+      .catch(() => setIsAuthenticated(false))
   }, [])
 
   // 2. Fetch leads from project database (/api/trip-requests)
@@ -58,6 +55,10 @@ export default function OperatorLeadsPage() {
     setLoading(true)
     try {
       const res = await fetch("/api/trip-requests")
+      if (res.status === 401) {
+        setIsAuthenticated(false)
+        return
+      }
       const data = await res.json()
       if (data.success && Array.isArray(data.bookings)) {
         setLeads(data.bookings)
@@ -102,29 +103,35 @@ export default function OperatorLeadsPage() {
   }, [isAuthenticated, fetchLeads, fetchVisitorStats])
 
   // Handle Login Submission
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoginSubmitting(true)
     setLoginError("")
-
-    const cleanUser = loginEmail.trim().toLowerCase()
-    const cleanPass = loginPassword.trim()
-
-    if (cleanUser === AUTHORIZED_USERNAME && cleanPass === AUTHORIZED_PASSWORD) {
-      sessionStorage.setItem("ridevo_operator_auth", "true")
-      setIsAuthenticated(true)
-      toast.success("Welcome, Jagadish! RIDEVO Inquiries Desk unlocked.")
-    } else {
-      setLoginError("Invalid operator credentials. Access restricted to authorized fleet manager.")
-      toast.error("Access denied. Please check username & password.")
+    try {
+      const res = await fetch("/api/operator/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: loginEmail, password: loginPassword }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data?.success) {
+        setIsAuthenticated(true)
+        setLoginPassword("")
+        toast.success("RIDEVO Inquiries Desk unlocked.")
+      } else {
+        setLoginError(data?.error || "Invalid operator credentials.")
+        toast.error("Access denied. Please check username & password.")
+      }
+    } catch {
+      setLoginError("Could not reach the server. Please try again.")
+    } finally {
+      setLoginSubmitting(false)
     }
-    setLoginSubmitting(false)
   }
 
   // Handle Logout
   const handleLogout = () => {
-    sessionStorage.removeItem("ridevo_operator_auth")
-    sessionStorage.removeItem("nammacab_operator_auth")
+    fetch("/api/operator/login", { method: "DELETE" }).catch(() => {})
     setIsAuthenticated(false)
     setLoginPassword("")
     toast.info("Logged out from Inquiries Desk.")

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import fs from "fs/promises"
 import path from "path"
-import { validateIndianPhone } from "@/lib/fareCalculator"
+import { validateIndianPhone, FLEET_CONFIGS } from "@/lib/fareCalculator"
+import { isOperator } from "@/lib/operatorAuth"
 
 export interface StoredTripRequest {
   bookingRef: string
@@ -152,7 +153,10 @@ async function persistBookings(list: StoredTripRequest[]): Promise<void> {
 }
 
 // ── GET: List all saved trip requests ─────────────────────────────────────────
-export async function GET() {
+export async function GET(req: Request) {
+  if (!isOperator(req)) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
+  }
   try {
     const list = await getAllBookings()
     return NextResponse.json({
@@ -184,9 +188,6 @@ export async function POST(req: Request) {
       pickupTime = "06:00 AM",
       days = 1,
       carId = "sedan",
-      carName = "Sedan",
-      ratePerKm = 11,
-      driverBata = 300,
       billedKm = 300,
       notes = "",
       agreedTerms = true,
@@ -223,9 +224,19 @@ export async function POST(req: Request) {
       )
     }
 
-    const numDays = Math.max(1, Number(days) || 1)
+    // Price is always calculated on the server from the official rate card,
+    // never trusted from the browser.
+    const car = FLEET_CONFIGS.find((c) => c.id === carId)
+    if (!car) {
+      return NextResponse.json({ success: false, error: "Unknown car type" }, { status: 400 })
+    }
+    const ratePerKm = car.ratePerKm
+    const driverBata = car.driverBataPerDay
+    const carName = car.name
+
+    const numDays = Math.min(30, Math.max(1, Math.floor(Number(days) || 1)))
     const packageMinKm = numDays * 300
-    const safeBilledKm = Math.max(packageMinKm, Number(billedKm) || packageMinKm)
+    const safeBilledKm = Math.min(6000, Math.max(packageMinKm, Number(billedKm) || packageMinKm))
     const extraKm = Math.max(0, safeBilledKm - packageMinKm)
     const kmFare = safeBilledKm * Number(ratePerKm)
     const bataTotal = numDays * Number(driverBata)
@@ -282,9 +293,13 @@ export async function POST(req: Request) {
 
 // ── PATCH: Update booking status ─────────────────────────────────────────────
 export async function PATCH(req: Request) {
+  if (!isOperator(req)) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
+  }
   try {
     const { bookingRef, status } = await req.json()
-    if (!bookingRef || !status) {
+    const ALLOWED_STATUS = ["pending_confirmation", "called_confirmed", "driver_allotted", "completed", "cancelled"]
+    if (!bookingRef || !status || !ALLOWED_STATUS.includes(status)) {
       return NextResponse.json(
         { success: false, error: "bookingRef and status are required" },
         { status: 400 }
