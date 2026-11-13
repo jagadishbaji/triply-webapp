@@ -66,8 +66,8 @@ interface PhotonSuggestion {
 // MAIN COMPONENT
 // ═════════════════════════════════════════════════════════════════════════════
 export default function HomePage() {
-  const [todayStr, setTodayStr] = useState("2026-11-08")
-  const [pickupDate, setPickupDate] = useState("2026-11-09")
+  const [todayStr, setTodayStr] = useState("")
+  const [pickupDate, setPickupDate] = useState("")
   const [source, setSource] = useState(DEFAULT_SOURCE)
   const [destination, setDestination] = useState("")
 
@@ -399,6 +399,11 @@ export default function HomePage() {
   // ── Construct WhatsApp Deep Link ──
   const generateWhatsAppLink = (car: FleetCarConfig | null) => {
     if (!car) return "#"
+    if (!destination.trim()) {
+      return `https://wa.me/${BOOKING_HELPLINE_PHONE_DIGITS}?text=${encodeURIComponent(
+        `Hello RIDEVO Hubli, I am interested in a ${car.name} for an outstation trip. Please share the fare.`
+      )}`
+    }
     const fare = computeCarFare(car)
     const msg =
       `*🚖 NEW TRIP INQUIRY - RIDEVO HUBLI*\n` +
@@ -480,6 +485,22 @@ export default function HomePage() {
                 <strong>Crysta (₹18/km)</strong>. Book in 30 seconds with <strong>zero advance payment</strong>{" "}
                 — our local Hubli coordinator confirms your ride in 15 minutes.
               </p>
+
+              {/* Primary calls to action: visible without scrolling */}
+              <div className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0 mb-5">
+                <a
+                  href="#planner"
+                  className="flex-1 h-12 rounded-xl bg-green-500 hover:bg-green-400 text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2 transition-colors active:scale-95"
+                >
+                  Get fixed fare <ArrowRight className="w-4 h-4" />
+                </a>
+                <a
+                  href={`tel:+${BOOKING_HELPLINE_PHONE_DIGITS}`}
+                  className="flex-1 h-12 rounded-xl border border-white/20 hover:border-green-400 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors active:scale-95"
+                >
+                  <Phone className="w-4 h-4 text-emerald-400" /> Call now
+                </a>
+              </div>
 
               {/* Verified Badges Bar */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-w-xl mx-auto lg:mx-0">
@@ -1302,7 +1323,7 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="mt-5 pt-3 border-t border-slate-200/80 text-[11px] text-green-700 font-semibold flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Logged in project database
+                <CheckCircle2 className="w-3.5 h-3.5" /> Saved with your reference ID
               </div>
             </div>
 
@@ -1858,7 +1879,7 @@ export default function HomePage() {
               </p>
               <div className="flex flex-col gap-2 text-sm">
                 <a
-                  href={`tel:${BOOKING_HELPLINE_PHONE}`}
+                  href={`tel:+${BOOKING_HELPLINE_PHONE_DIGITS}`}
                   className="flex items-center gap-2 hover:text-green-400 transition-colors"
                 >
                   <Phone className="w-4 h-4 text-green-500" />
@@ -1908,7 +1929,7 @@ export default function HomePage() {
               </div>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <a href={`tel:${BOOKING_HELPLINE_PHONE}`} className="hover:text-green-400 transition-colors">
+                  <a href={`tel:+${BOOKING_HELPLINE_PHONE_DIGITS}`} className="hover:text-green-400 transition-colors">
                     24/7 Helpline: {BOOKING_HELPLINE_PHONE}
                   </a>
                 </li>
@@ -1942,14 +1963,14 @@ export default function HomePage() {
       {/* ═══════════════════════════════════════════════════════════════════════
           FLOATING QUICK CONTACT ACTION (WhatsApp)
           ═══════════════════════════════════════════════════════════════════════ */}
-      <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2.5">
+      <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2.5">
         <a
           href={`https://wa.me/${BOOKING_HELPLINE_PHONE_DIGITS}?text=${encodeURIComponent(
             "Hello RIDEVO Hubli, I want to inquire about booking an outstation cab from Hubli."
           )}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-green-600 hover:bg-green-500 text-white p-3.5 sm:px-4 sm:py-3 rounded-full shadow-2xl flex items-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-white/20"
+          className="bg-green-600/95 hover:bg-green-500 text-white p-3 sm:px-4 sm:py-3 rounded-full shadow-2xl flex items-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-white/20"
           aria-label="Chat on WhatsApp"
         >
           <MessageCircle className="w-5 h-5 fill-current" />

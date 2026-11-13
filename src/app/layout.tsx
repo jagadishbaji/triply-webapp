@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: "%s | RIDEVO Hubli",
   },
   description:
-    "Book verified outstation cabs in Hubli on RIDEVO. Compare guaranteed lowest fixed rates: Cabs Hubli to Goa (₹11/km), Hubli to Hampi, Gokarna, Dandeli & Bangalore. Swift Dzire, Etios, Ertiga 6-seater, Innova Crysta. Verified tied-up cabs, zero advance payment. Call +91 8884856868.",
+    "Book verified outstation cabs in Hubli on RIDEVO. Fixed guaranteed rates: Cabs Hubli to Goa (₹11/km), Hubli to Hampi, Gokarna, Dandeli & Bangalore. Swift Dzire, Etios, Ertiga 6-seater, Innova Crysta. Verified tied-up cabs, zero advance payment. Call +91 8884856868.",
   keywords: [
     "ridevo",
     "ridevo hubli",
@@ -73,7 +73,7 @@ export const metadata: Metadata = {
     siteName: "RIDEVO Hubli",
     title: "Cabs in Hubli | Hubli to Goa & Hampi Outstation Cabs | RIDEVO",
     description:
-      "Compare fixed guaranteed rates for outstation cabs in Hubli on RIDEVO. Sedan ₹11/km, Ertiga ₹15/km, Innova ₹16/km, Crysta ₹18/km. Zero advance payment. Verified tied-up cabs.",
+      "Fixed guaranteed rates for outstation cabs in Hubli on RIDEVO. Sedan ₹11/km, Ertiga ₹15/km, Innova ₹16/km, Crysta ₹18/km. Zero advance payment. Verified tied-up cabs.",
     images: [
       {
         url: "/images/cars/sedan-nobg.png",
