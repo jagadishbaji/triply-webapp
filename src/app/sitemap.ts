@@ -1,4 +1,5 @@
 import { MetadataRoute } from "next"
+import { CAB_ROUTES } from "@/lib/routes"
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ridevo.in"
@@ -11,6 +12,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 1.0,
     },
+    ...CAB_ROUTES.map((r) => ({
+      url: `${baseUrl}/routes/${r.slug}`,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.9,
+    })),
     {
       url: `${baseUrl}/terms`,
       lastModified: now,

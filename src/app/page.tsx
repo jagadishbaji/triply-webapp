@@ -1934,6 +1934,16 @@ export default function HomePage() {
                   </a>
                 </li>
                 <li>
+                  <Link href="/routes/hubli-to-goa-cab" className="hover:text-green-400 transition-colors">
+                    Hubli to Goa Cab
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/routes/hubli-to-hampi-cab" className="hover:text-green-400 transition-colors">
+                    Hubli to Hampi Cab
+                  </Link>
+                </li>
+                <li>
                   <Link href="/terms" className="hover:text-green-400 transition-colors">
                     Terms &amp; Conditions
                   </Link>
