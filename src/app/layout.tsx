@@ -76,7 +76,7 @@ export const metadata: Metadata = {
       "Fixed guaranteed rates for outstation cabs in Hubli on RIDEVO. Sedan ₹11/km, Ertiga ₹15/km, Innova ₹16/km, Crysta ₹18/km. Zero advance payment. Verified tied-up cabs.",
     images: [
       {
-        url: "/images/cars/sedan-nobg.png",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "Cabs in Hubli - RIDEVO Verified Outstation Taxi Service",
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
     title: "Cabs in Hubli | Hubli to Goa & Hampi Outstation Cabs | RIDEVO",
     description:
       "Compare fixed rates for Hubli to Goa & Hampi outstation cabs on RIDEVO. Sedans from ₹11/km. Verified tied-up cabs, zero advance payment.",
-    images: ["/images/cars/sedan-nobg.png"],
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,
