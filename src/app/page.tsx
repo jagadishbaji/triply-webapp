@@ -486,22 +486,6 @@ export default function HomePage() {
                 — our local Hubli coordinator confirms your ride in 15 minutes.
               </p>
 
-              {/* Primary calls to action: visible without scrolling */}
-              <div className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0 mb-5">
-                <a
-                  href="#planner"
-                  className="w-full sm:w-auto sm:flex-1 h-12 rounded-xl bg-green-500 hover:bg-green-400 text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2 transition-colors active:scale-95"
-                >
-                  Get fixed fare <ArrowRight className="w-4 h-4" />
-                </a>
-                <a
-                  href={`tel:+${BOOKING_HELPLINE_PHONE_DIGITS}`}
-                  className="w-full sm:w-auto sm:flex-1 h-12 rounded-xl border border-white/20 hover:border-green-400 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors active:scale-95"
-                >
-                  <Phone className="w-4 h-4 text-emerald-400" /> Call now
-                </a>
-              </div>
-
               {/* Verified Badges Bar */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-w-xl mx-auto lg:mx-0">
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-2.5 sm:p-3 text-center backdrop-blur-sm hover:border-emerald-500/30 transition-colors">
@@ -1934,13 +1918,8 @@ export default function HomePage() {
                   </a>
                 </li>
                 <li>
-                  <Link href="/routes/hubli-to-goa-cab" className="hover:text-green-400 transition-colors">
-                    Hubli to Goa Cab
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/routes/hubli-to-hampi-cab" className="hover:text-green-400 transition-colors">
-                    Hubli to Hampi Cab
+                  <Link href="/admin/leads" className="text-green-400 hover:text-green-300 font-bold flex items-center gap-1">
+                    Operator Live Desk <ArrowUpRight className="w-3 h-3" />
                   </Link>
                 </li>
                 <li>
@@ -1966,6 +1945,9 @@ export default function HomePage() {
               <Link href="/terms" className="hover:text-green-400 transition-colors">
                 Terms &amp; Conditions
               </Link>
+              <Link href="/admin/leads" className="text-green-400 hover:text-green-300 font-bold">
+                Operator Inquiries Desk
+              </Link>
             </div>
           </div>
         </div>
@@ -1973,14 +1955,14 @@ export default function HomePage() {
       {/* ═══════════════════════════════════════════════════════════════════════
           FLOATING QUICK CONTACT ACTION (WhatsApp)
           ═══════════════════════════════════════════════════════════════════════ */}
-      <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2.5">
+      <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2.5">
         <a
           href={`https://wa.me/${BOOKING_HELPLINE_PHONE_DIGITS}?text=${encodeURIComponent(
             "Hello RIDEVO Hubli, I want to inquire about booking an outstation cab from Hubli."
           )}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-green-600/95 hover:bg-green-500 text-white p-3 sm:px-4 sm:py-3 rounded-full shadow-2xl flex items-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-white/20"
+          className="bg-green-600 hover:bg-green-500 text-white p-3.5 sm:px-4 sm:py-3 rounded-full shadow-2xl flex items-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-white/20"
           aria-label="Chat on WhatsApp"
         >
           <MessageCircle className="w-5 h-5 fill-current" />
