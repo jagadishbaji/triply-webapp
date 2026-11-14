@@ -139,19 +139,36 @@ export default function OperatorLeadsPage() {
 
   // Update Booking Status
   const updateStatus = async (bookingRef: string, newStatus: string) => {
+    // Show the change straight away; undo it if the server does not confirm it.
+    const previous = leads
+    setLeads((prev) =>
+      prev.map((l) =>
+        l.bookingRef === bookingRef ? { ...l, status: newStatus as StoredTripRequest["status"] } : l
+      )
+    )
     try {
       const res = await fetch("/api/trip-requests", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingRef, status: newStatus }),
       })
-      const data = await res.json()
-      if (data.success) {
-        toast.success(`Booking ${bookingRef} marked as ${newStatus.replace("_", " ")}`)
-        fetchLeads()
+      if (res.status === 401) {
+        setLeads(previous)
+        setIsAuthenticated(false)
+        toast.error("Session expired. Please sign in again.")
+        return
+      }
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data?.success && data.booking) {
+        setLeads((prev) => prev.map((l) => (l.bookingRef === bookingRef ? data.booking : l)))
+        toast.success(`Booking ${bookingRef} marked as ${newStatus.replace(/_/g, " ")}`)
+      } else {
+        setLeads(previous)
+        toast.error(data?.error || "Could not update the booking status. Please try again.")
       }
     } catch {
-      toast.error("Failed to update booking status")
+      setLeads(previous)
+      toast.error("Failed to update booking status. Check your internet connection.")
     }
   }
 
@@ -391,7 +408,7 @@ export default function OperatorLeadsPage() {
                   ? "Vercel KV Cloud Sync: Active"
                   : storageEngine === "local_disk"
                   ? "Local Disk Storage (data/trip-requests.json)"
-                  : "Serverless Ephemeral Mode"}
+                  : "Temporary storage: bookings can disappear. Connect Upstash / Vercel KV"}
               </span>
             </p>
           </div>
@@ -546,7 +563,7 @@ export default function OperatorLeadsPage() {
                           : "bg-slate-100 text-slate-700 border border-slate-200"
                       }`}
                     >
-                      {item.status.replace("_", " ")}
+                      {item.status.replace(/_/g, " ")}
                     </span>
 
                     <span className="text-[11px] text-slate-400 font-medium">
