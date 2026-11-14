@@ -114,7 +114,7 @@ export default async function RoutePage({ params }: Props) {
           <div className="mt-6 flex flex-col sm:flex-row gap-3 max-w-xl">
             <Link
               href="/#planner"
-              className="flex-1 h-12 rounded-xl bg-green-500 hover:bg-green-400 text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2"
+              className="w-full sm:w-auto sm:flex-1 h-12 rounded-xl bg-green-500 hover:bg-green-400 text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2"
             >
               Get exact fare <ArrowRight className="w-4 h-4" />
             </Link>
@@ -122,7 +122,7 @@ export default async function RoutePage({ params }: Props) {
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 h-12 rounded-xl border border-white/20 hover:border-green-400 text-white font-bold text-sm flex items-center justify-center gap-2"
+              className="w-full sm:w-auto sm:flex-1 h-12 rounded-xl border border-white/20 hover:border-green-400 text-white font-bold text-sm flex items-center justify-center gap-2"
             >
               <MessageCircle className="w-4 h-4 text-green-400" /> WhatsApp us
             </a>

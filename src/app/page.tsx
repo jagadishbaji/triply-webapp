@@ -490,13 +490,13 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0 mb-5">
                 <a
                   href="#planner"
-                  className="flex-1 h-12 rounded-xl bg-green-500 hover:bg-green-400 text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2 transition-colors active:scale-95"
+                  className="w-full sm:w-auto sm:flex-1 h-12 rounded-xl bg-green-500 hover:bg-green-400 text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2 transition-colors active:scale-95"
                 >
                   Get fixed fare <ArrowRight className="w-4 h-4" />
                 </a>
                 <a
                   href={`tel:+${BOOKING_HELPLINE_PHONE_DIGITS}`}
-                  className="flex-1 h-12 rounded-xl border border-white/20 hover:border-green-400 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors active:scale-95"
+                  className="w-full sm:w-auto sm:flex-1 h-12 rounded-xl border border-white/20 hover:border-green-400 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors active:scale-95"
                 >
                   <Phone className="w-4 h-4 text-emerald-400" /> Call now
                 </a>
