@@ -5,8 +5,8 @@ import { Phone, MessageCircle, CheckCircle2, MapPin, ArrowRight } from "lucide-r
 import { RidevoLogo } from "@/components/RidevoLogo"
 import { fmtINR } from "@/lib/fareCalculator"
 import { CAB_ROUTES, getRoute, routeFares } from "@/lib/routes"
+import { SITE_URL } from "@/lib/site"
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://ridevo.in"
 const PHONE_DISPLAY = "+91 8884856868"
 const PHONE_DIGITS = "918884856868"
 
@@ -72,8 +72,23 @@ export default async function RoutePage({ params }: Props) {
         "@type": "BreadcrumbList",
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
-          { "@type": "ListItem", position: 2, name: route.title, item: url },
+          { "@type": "ListItem", position: 2, name: "Outstation cab routes", item: `${SITE_URL}/routes` },
+          { "@type": "ListItem", position: 3, name: route.title, item: url },
         ],
+      },
+      {
+        "@type": "Service",
+        "@id": `${url}#service`,
+        name: `${route.title} (Hubli to ${route.destination})`,
+        serviceType: "Outstation taxi service",
+        description: `Outstation cab from Hubli to ${route.destination}, about ${route.oneWayKm} km one way, at fixed per-km rates with driver details shared before pickup.`,
+        url,
+        areaServed: [
+          { "@type": "City", name: "Hubli" },
+          { "@type": "City", name: "Dharwad" },
+          { "@type": "Place", name: route.destination },
+        ],
+        provider: { "@type": "TaxiService", "@id": `${SITE_URL}/#taxiservice`, name: "RIDEVO - Cabs in Hubli" },
       },
       {
         "@type": "FAQPage",
@@ -105,7 +120,8 @@ export default async function RoutePage({ params }: Props) {
       <main className="max-w-5xl mx-auto px-4 py-10 space-y-12">
         <section>
           <nav aria-label="Breadcrumb" className="text-xs text-slate-400 mb-4">
-            <Link href="/" className="hover:text-green-400">Home</Link> / <span>{route.title}</span>
+            <Link href="/" className="hover:text-green-400">Home</Link> /{" "}
+            <Link href="/routes" className="hover:text-green-400">Routes</Link> / <span>{route.title}</span>
           </nav>
           <h1 className="text-3xl sm:text-4xl font-black text-white leading-tight">
             {route.title}: Fixed Rates, Pay After Your Trip

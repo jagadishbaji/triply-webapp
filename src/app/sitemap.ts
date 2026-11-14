@@ -1,34 +1,20 @@
 import { MetadataRoute } from "next"
 import { CAB_ROUTES } from "@/lib/routes"
+import { CONTENT_UPDATED, SITE_URL } from "@/lib/site"
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ridevo.in"
-  const now = new Date()
+  const updated = new Date(CONTENT_UPDATED)
 
   return [
-    {
-      url: baseUrl,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 1.0,
-    },
+    { url: SITE_URL, lastModified: updated, changeFrequency: "weekly", priority: 1.0 },
+    { url: `${SITE_URL}/routes`, lastModified: updated, changeFrequency: "weekly", priority: 0.9 },
     ...CAB_ROUTES.map((r) => ({
-      url: `${baseUrl}/routes/${r.slug}`,
-      lastModified: now,
+      url: `${SITE_URL}/routes/${r.slug}`,
+      lastModified: updated,
       changeFrequency: "weekly" as const,
-      priority: 0.9,
+      priority: 0.8,
     })),
-    {
-      url: `${baseUrl}/terms`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
+    { url: `${SITE_URL}/terms`, lastModified: updated, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE_URL}/privacy`, lastModified: updated, changeFrequency: "yearly", priority: 0.3 },
   ]
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import { HomeJsonLd } from "@/components/HomeJsonLd"
 import Image from "next/image"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
@@ -116,28 +117,34 @@ export default function HomePage() {
 
   // ── Accordion FAQ State ──
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0)
-  const [visitorCount, setVisitorCount] = useState<number>(1420)
+  const [visitorCount, setVisitorCount] = useState<number | null>(null)
 
-  // ── Track & Fetch Page Visitors ──
+  // ── Track & Fetch Page Visitors (real numbers; one visit per browser session) ──
   useEffect(() => {
     try {
-      const recorded = sessionStorage.getItem("ridevo_visited_session")
-      if (!recorded) {
-        fetch("/api/visitor-count", { method: "POST" })
-          .then((r) => r.json())
-          .then((d) => {
-            if (d?.totalVisits) setVisitorCount(d.totalVisits)
-          })
-          .catch(() => {})
-        sessionStorage.setItem("ridevo_visited_session", "true")
-      } else {
-        fetch("/api/visitor-count")
-          .then((r) => r.json())
-          .then((d) => {
-            if (d?.totalVisits) setVisitorCount(d.totalVisits)
-          })
-          .catch(() => {})
+      let visitorId = localStorage.getItem("ridevo_visitor_id")
+      if (!visitorId) {
+        visitorId =
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `v-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
+        localStorage.setItem("ridevo_visitor_id", visitorId)
       }
+      const recorded = sessionStorage.getItem("ridevo_visited_session")
+      const request = recorded
+        ? fetch("/api/visitor-count")
+        : fetch("/api/visitor-count", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ visitorId }),
+          })
+      request
+        .then((r) => r.json())
+        .then((d) => {
+          if (typeof d?.uniqueVisitors === "number") setVisitorCount(d.uniqueVisitors)
+          if (!recorded && d?.success) sessionStorage.setItem("ridevo_visited_session", "true")
+        })
+        .catch(() => {})
     } catch {}
   }, [])
 
@@ -429,6 +436,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-green-500 selection:text-white">
+      <HomeJsonLd />
       <Toaster position="top-right" richColors />
       <Navbar />
 
@@ -468,7 +476,11 @@ export default function HomePage() {
                 <span className="text-emerald-500/60 hidden sm:inline">•</span>
                 <span className="text-emerald-300 font-bold flex items-center gap-1">
                   <Users className="w-3.5 h-3.5" />
-                  <span suppressHydrationWarning>{visitorCount.toLocaleString("en-IN")}+ Travelers Visited</span>
+                  <span suppressHydrationWarning>
+                    {visitorCount !== null && visitorCount >= 50
+                      ? `${(Math.floor(visitorCount / 10) * 10).toLocaleString("en-IN")}+ Visitors`
+                      : "Fixed Rates, Zero Advance"}
+                  </span>
                 </span>
               </div>
 

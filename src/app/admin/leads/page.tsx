@@ -33,9 +33,11 @@ export default function OperatorLeadsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [storageEngine, setStorageEngine] = useState<string>("local_disk")
-  const [visitorStats, setVisitorStats] = useState<{ total: number; today: number; engine: string }>({
-    total: 1420,
-    today: 142,
+  const [operatorName, setOperatorName] = useState("")
+  const [visitorStats, setVisitorStats] = useState<{ total: number; today: number; unique: number; engine: string }>({
+    total: 0,
+    today: 0,
+    unique: 0,
     engine: "local_disk",
   })
 
@@ -45,7 +47,10 @@ export default function OperatorLeadsPage() {
     // The session lives in a secure server-set cookie; ask the server if we are signed in.
     fetch("/api/operator/login")
       .then((r) => r.json())
-      .then((d) => setIsAuthenticated(Boolean(d?.authenticated)))
+      .then((d) => {
+        setIsAuthenticated(Boolean(d?.authenticated))
+        setOperatorName(d?.username || "")
+      })
       .catch(() => setIsAuthenticated(false))
   }, [])
 
@@ -64,7 +69,7 @@ export default function OperatorLeadsPage() {
         setLeads(data.bookings)
         if (data.storageEngine) setStorageEngine(data.storageEngine)
       } else {
-        setLeads([])
+        toast.error(data?.error || "Could not load bookings. Showing the last loaded list.")
       }
     } catch {
       toast.error("Failed to load customer trip inquiries")
@@ -81,8 +86,9 @@ export default function OperatorLeadsPage() {
       const data = await res.json()
       if (data?.success) {
         setVisitorStats({
-          total: data.totalVisits || 1420,
-          today: data.todayVisits || 142,
+          total: Number(data.totalVisits) || 0,
+          today: Number(data.todayVisits) || 0,
+          unique: Number(data.uniqueVisitors) || 0,
           engine: data.storageEngine || "local_disk",
         })
       }
@@ -115,6 +121,7 @@ export default function OperatorLeadsPage() {
       })
       const data = await res.json().catch(() => ({}))
       if (res.ok && data?.success) {
+        setOperatorName(loginEmail.trim())
         setIsAuthenticated(true)
         setLoginPassword("")
         toast.success("RIDEVO Inquiries Desk unlocked.")
@@ -185,7 +192,9 @@ export default function OperatorLeadsPage() {
     const pending = leads.filter((l) => l.status === "pending_confirmation").length
     const confirmed = leads.filter((l) => l.status === "called_confirmed").length
     const allotted = leads.filter((l) => l.status === "driver_allotted").length
-    return { total, pending, confirmed, allotted }
+    const completed = leads.filter((l) => l.status === "completed").length
+    const cancelled = leads.filter((l) => l.status === "cancelled").length
+    return { total, pending, confirmed, allotted, completed, cancelled }
   }, [leads])
 
   // Filtered Leads
@@ -193,7 +202,7 @@ export default function OperatorLeadsPage() {
     return leads.filter((item) => {
       const matchesSearch =
         item.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.customerPhone.includes(searchTerm) ||
+        item.customerPhone.includes(searchTerm.replace(/[\s+-]/g, "").replace(/^91(?=\d{10}$)/, "")) ||
         item.bookingRef.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.destination.toLowerCase().includes(searchTerm.toLowerCase())
 
@@ -237,13 +246,19 @@ export default function OperatorLeadsPage() {
       "Route", "Pickup Address", "Pickup Date", "Pickup Time", "Days",
       "Vehicle", "Rate/KM", "Driver Bata/Day", "Billed KM", "Estimated Fare", "Status", "Notes"
     ]
+    // Quote every text value; neutralise cells that start with = + - @ so Excel never runs them as formulas
+    const cell = (v: unknown) => {
+      let t = String(v ?? "")
+      if (/^[=+\-@]/.test(t)) t = "'" + t
+      return `"${t.replace(/"/g, '""')}"`
+    }
     const rows = leads.map((l) => [
       l.bookingRef,
-      new Date(l.createdAt).toLocaleDateString("en-IN"),
-      `"${l.customerName.replace(/"/g, '""')}"`,
+      new Date(l.createdAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+      l.customerName,
       l.customerPhone,
-      `"${l.source} to ${l.destination}"`,
-      `"${l.pickupAddress.replace(/"/g, '""')}"`,
+      `${l.source} to ${l.destination}`,
+      l.pickupAddress,
       l.pickupDate,
       l.pickupTime,
       l.days,
@@ -252,18 +267,21 @@ export default function OperatorLeadsPage() {
       l.driverBata,
       l.billedKm,
       l.estimatedFare,
-      l.status,
-      `"${(l.notes || "").replace(/"/g, '""')}"`,
+      l.status.replace(/_/g, " "),
+      l.notes || "",
     ])
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
-    const encodedUri = encodeURI(csvContent)
+    const csv = [headers, ...rows].map((r) => r.map(cell).join(",")).join("\r\n")
+    // BOM so Excel shows rupee signs and Kannada names correctly
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
-    link.setAttribute("href", encodedUri)
-    link.setAttribute("download", `ridevo-leads-${new Date().toISOString().split("T")[0]}.csv`)
+    link.href = url
+    link.download = `ridevo-leads-${new Date().toISOString().split("T")[0]}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+    URL.revokeObjectURL(url)
     toast.success("Customer leads exported to CSV!")
   }
 
@@ -388,7 +406,7 @@ export default function OperatorLeadsPage() {
               </Link>
               <span className="text-slate-500">•</span>
               <span className="inline-flex items-center gap-1 text-xs text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-800/40 px-2.5 py-0.5 rounded-full">
-                <UserCheck className="w-3 h-3" /> Logged in: Jagadishbaji@gmail.com
+                <UserCheck className="w-3 h-3" /> Logged in: {operatorName || "Operator"}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
@@ -440,11 +458,21 @@ export default function OperatorLeadsPage() {
           </div>
         </div>
 
+        {storageEngine === "vercel_ephemeral" && (
+          <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 text-amber-900 px-4 py-3 text-sm font-semibold">
+            Bookings and visitor counts are NOT being stored permanently right now. Connect a free Upstash Redis
+            database to this Vercel project (Storage tab) so nothing is lost and status changes always stick.
+          </div>
+        )}
+
         {/* Metrics Row */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6">
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
             <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Bookings</div>
             <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5">{metrics.total}</div>
+            <div className="text-[10px] text-slate-400 font-semibold mt-0.5">
+              {metrics.completed} completed · {metrics.cancelled} cancelled
+            </div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
@@ -472,7 +500,7 @@ export default function OperatorLeadsPage() {
               {visitorStats.total.toLocaleString("en-IN")}
             </div>
             <div className="text-[10px] text-slate-400 font-semibold mt-0.5">
-              +{visitorStats.today} visits today
+              visits · {visitorStats.today} today · {visitorStats.unique.toLocaleString("en-IN")} unique
             </div>
           </div>
         </div>
@@ -496,7 +524,8 @@ export default function OperatorLeadsPage() {
               { id: "pending_confirmation", label: `Pending Call (${metrics.pending})` },
               { id: "called_confirmed", label: `Confirmed (${metrics.confirmed})` },
               { id: "driver_allotted", label: `Driver Allotted (${metrics.allotted})` },
-              { id: "completed", label: "Completed" },
+              { id: "completed", label: `Completed (${metrics.completed})` },
+              { id: "cancelled", label: `Cancelled (${metrics.cancelled})` },
             ].map((tab) => (
               <button
                 key={tab.id}

@@ -27,7 +27,8 @@ function tooMany(ip: string): boolean {
 
 // GET: is the current browser signed in?
 export async function GET(req: Request) {
-  return NextResponse.json({ authenticated: isOperator(req) })
+  const ok = isOperator(req)
+  return NextResponse.json({ authenticated: ok, username: ok ? process.env.OPERATOR_USERNAME || "" : "" })
 }
 
 // POST: sign in
