@@ -4,6 +4,8 @@ import path from "path"
 // ─────────────────────────────────────────────────────────────────────────────
 // Booking storage
 //
+//  • If Supabase is configured (SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY), every
+//    booking is a row in the `bookings` table. This is the preferred store.
 //  • If Upstash / Vercel KV (Redis) is configured, EVERY booking is stored as its
 //    own field of one Redis hash. Updating a status touches only that booking, so
 //    nothing is lost and every server instance sees the same data.
@@ -53,8 +55,11 @@ export interface StoredTripRequest {
   channel: "website_direct"
 }
 
-export type StorageEngine = "vercel_kv_upstash" | "vercel_ephemeral" | "local_disk"
+export type StorageEngine = "supabase" | "vercel_kv_upstash" | "vercel_ephemeral" | "local_disk"
 
+const SB_URL = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/+$/, "")
+const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || ""
+const USE_SUPABASE = Boolean(SB_URL && SB_KEY)
 const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL
 const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN
 const HASH_KEY = "ridevo:bookings"
@@ -65,6 +70,7 @@ const RUNTIME_DIR = IS_VERCEL ? path.join("/tmp", "ridevo-data") : path.join(pro
 const RUNTIME_FILE = path.join(RUNTIME_DIR, "trip-requests.json")
 
 export function storageEngine(): StorageEngine {
+  if (USE_SUPABASE) return "supabase"
   if (KV_URL && KV_TOKEN) return "vercel_kv_upstash"
   return IS_VERCEL ? "vercel_ephemeral" : "local_disk"
 }
@@ -173,8 +179,110 @@ function withLock<T>(fn: () => Promise<T>): Promise<T> {
   return run
 }
 
+
+// ── Supabase (PostgREST over fetch; server-side only, uses the service role key) ──
+type BookingRow = {
+  booking_ref: string
+  created_at: string
+  updated_at: string | null
+  customer_name: string
+  customer_phone: string
+  pickup_address: string
+  source: string
+  destination: string
+  pickup_date: string
+  pickup_time: string
+  days: number
+  car_id: string
+  car_name: string
+  rate_per_km: number | string
+  driver_bata: number | string
+  package_min_km: number
+  billed_km: number
+  extra_km_beyond_package: number
+  estimated_fare: number | string
+  notes: string | null
+  status: string
+  agreed_terms: boolean
+}
+
+async function sb<T = unknown>(pathAndQuery: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${SB_URL}/rest/v1/${pathAndQuery}`, {
+    ...init,
+    cache: "no-store",
+    headers: {
+      apikey: SB_KEY,
+      Authorization: `Bearer ${SB_KEY}`,
+      "Content-Type": "application/json",
+      ...(init.headers || {}),
+    },
+  })
+  const text = await res.text()
+  const data = text ? JSON.parse(text) : null
+  if (!res.ok) throw new Error(`Storage error: ${data?.message || res.status}`)
+  return data as T
+}
+
+function fromRow(r: BookingRow): StoredTripRequest {
+  return normalizeBooking({
+    bookingRef: r.booking_ref,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at ?? undefined,
+    customerName: r.customer_name,
+    customerPhone: r.customer_phone,
+    pickupAddress: r.pickup_address,
+    source: r.source,
+    destination: r.destination,
+    pickupDate: r.pickup_date,
+    pickupTime: r.pickup_time,
+    days: r.days,
+    carId: r.car_id,
+    carName: r.car_name,
+    ratePerKm: Number(r.rate_per_km),
+    driverBata: Number(r.driver_bata),
+    packageMinKm: r.package_min_km,
+    billedKm: r.billed_km,
+    extraKmBeyondPackage: r.extra_km_beyond_package,
+    estimatedFare: Number(r.estimated_fare),
+    notes: r.notes ?? "",
+    status: r.status as BookingStatus,
+    agreedTerms: r.agreed_terms,
+  })
+}
+
+function toRow(b: StoredTripRequest): BookingRow {
+  return {
+    booking_ref: b.bookingRef,
+    created_at: b.createdAt,
+    updated_at: b.updatedAt ?? new Date().toISOString(),
+    customer_name: b.customerName,
+    customer_phone: b.customerPhone,
+    pickup_address: b.pickupAddress,
+    source: b.source,
+    destination: b.destination,
+    pickup_date: b.pickupDate,
+    pickup_time: b.pickupTime,
+    days: b.days,
+    car_id: b.carId,
+    car_name: b.carName,
+    rate_per_km: b.ratePerKm,
+    driver_bata: b.driverBata,
+    package_min_km: b.packageMinKm,
+    billed_km: b.billedKm,
+    extra_km_beyond_package: b.extraKmBeyondPackage,
+    estimated_fare: b.estimatedFare,
+    notes: b.notes ?? "",
+    status: b.status,
+    agreed_terms: b.agreedTerms,
+  }
+}
+
 // ── Public API ───────────────────────────────────────────────────────────────
 export async function listBookings(): Promise<StoredTripRequest[]> {
+  if (USE_SUPABASE) {
+    const rows = await sb<BookingRow[]>("bookings?select=*&order=created_at.desc&limit=2000")
+    return rows.map(fromRow)
+  }
   if (KV_URL && KV_TOKEN) {
     let flat = await redis<string[]>(["HGETALL", HASH_KEY])
     if (!flat || flat.length === 0) {
@@ -209,6 +317,10 @@ export async function listBookings(): Promise<StoredTripRequest[]> {
 }
 
 export async function getBooking(ref: string): Promise<StoredTripRequest | null> {
+  if (USE_SUPABASE) {
+    const rows = await sb<BookingRow[]>(`bookings?select=*&booking_ref=eq.${encodeURIComponent(ref)}&limit=1`)
+    return rows[0] ? fromRow(rows[0]) : null
+  }
   if (KV_URL && KV_TOKEN) {
     const raw = await redis<string | null>(["HGET", HASH_KEY, ref])
     if (!raw) return null
@@ -223,6 +335,11 @@ export async function getBooking(ref: string): Promise<StoredTripRequest | null>
 
 export async function saveBooking(booking: StoredTripRequest): Promise<void> {
   const b = normalizeBooking({ ...booking, updatedAt: new Date().toISOString() })
+  if (USE_SUPABASE) {
+    // Plain insert: a duplicate booking reference fails instead of overwriting someone else's booking
+    await sb("bookings", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify(toRow(b)) })
+    return
+  }
   if (KV_URL && KV_TOKEN) {
     await redis(["HSET", HASH_KEY, b.bookingRef, JSON.stringify(b)])
     return
@@ -235,6 +352,14 @@ export async function saveBooking(booking: StoredTripRequest): Promise<void> {
 }
 
 export async function updateBookingStatus(ref: string, status: BookingStatus): Promise<StoredTripRequest | null> {
+  if (USE_SUPABASE) {
+    const rows = await sb<BookingRow[]>(`bookings?booking_ref=eq.${encodeURIComponent(ref)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({ status, updated_at: new Date().toISOString() }),
+    })
+    return rows[0] ? fromRow(rows[0]) : null
+  }
   if (KV_URL && KV_TOKEN) {
     const current = await getBooking(ref)
     if (!current) return null

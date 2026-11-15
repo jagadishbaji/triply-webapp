@@ -415,18 +415,20 @@ export default function OperatorLeadsPage() {
             <p className="text-slate-400 text-xs sm:text-sm mt-1 flex items-center gap-2 flex-wrap">
               <span>Live outstation cab bookings saved in database. Auto-refreshes every 15s.</span>
               <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
-                storageEngine === "vercel_kv_upstash"
+                (storageEngine === "supabase" || storageEngine === "vercel_kv_upstash")
                   ? "bg-emerald-950/80 text-emerald-300 border-emerald-700/50"
                   : storageEngine === "local_disk"
                   ? "bg-blue-950/80 text-blue-300 border-blue-700/50"
                   : "bg-amber-950/80 text-amber-300 border-amber-700/50"
               }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${storageEngine === "vercel_kv_upstash" ? "bg-emerald-400" : storageEngine === "local_disk" ? "bg-blue-400" : "bg-amber-400"}`} />
-                {storageEngine === "vercel_kv_upstash"
+                <span className={`w-1.5 h-1.5 rounded-full ${storageEngine === "supabase" || storageEngine === "vercel_kv_upstash" ? "bg-emerald-400" : storageEngine === "local_disk" ? "bg-blue-400" : "bg-amber-400"}`} />
+                {storageEngine === "supabase"
+                  ? "Supabase database: Active"
+                  : storageEngine === "vercel_kv_upstash"
                   ? "Vercel KV Cloud Sync: Active"
                   : storageEngine === "local_disk"
                   ? "Local Disk Storage (data/trip-requests.json)"
-                  : "Temporary storage: bookings can disappear. Connect Upstash / Vercel KV"}
+                  : "Temporary storage: bookings can disappear. Connect Supabase"}
               </span>
             </p>
           </div>
