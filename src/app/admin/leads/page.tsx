@@ -15,10 +15,6 @@ import { toast, Toaster } from "sonner"
 import { RidevoLogo } from "@/components/RidevoLogo"
 import type { StoredTripRequest } from "@/app/api/trip-requests/route"
 
-// ── Authorized Operator Credentials ─────────────────────────────────────────
-const AUTHORIZED_USERNAME = "jagadishbaji@gmail.com"
-const AUTHORIZED_PASSWORD = "Jaiprabhu@77"
-
 export default function OperatorLeadsPage() {
   const [mounted, setMounted] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -37,19 +33,25 @@ export default function OperatorLeadsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [storageEngine, setStorageEngine] = useState<string>("local_disk")
-  const [visitorStats, setVisitorStats] = useState<{ total: number; today: number; engine: string }>({
-    total: 1420,
-    today: 142,
+  const [operatorName, setOperatorName] = useState("")
+  const [visitorStats, setVisitorStats] = useState<{ total: number; today: number; unique: number; engine: string }>({
+    total: 0,
+    today: 0,
+    unique: 0,
     engine: "local_disk",
   })
 
   // 1. Check existing session on mount
   useEffect(() => {
     setMounted(true)
-    const saved = sessionStorage.getItem("ridevo_operator_auth") || sessionStorage.getItem("nammacab_operator_auth")
-    if (saved === "true") {
-      setIsAuthenticated(true)
-    }
+    // The session lives in a secure server-set cookie; ask the server if we are signed in.
+    fetch("/api/operator/login")
+      .then((r) => r.json())
+      .then((d) => {
+        setIsAuthenticated(Boolean(d?.authenticated))
+        setOperatorName(d?.username || "")
+      })
+      .catch(() => setIsAuthenticated(false))
   }, [])
 
   // 2. Fetch leads from project database (/api/trip-requests)
@@ -58,12 +60,16 @@ export default function OperatorLeadsPage() {
     setLoading(true)
     try {
       const res = await fetch("/api/trip-requests")
+      if (res.status === 401) {
+        setIsAuthenticated(false)
+        return
+      }
       const data = await res.json()
       if (data.success && Array.isArray(data.bookings)) {
         setLeads(data.bookings)
         if (data.storageEngine) setStorageEngine(data.storageEngine)
       } else {
-        setLeads([])
+        toast.error(data?.error || "Could not load bookings. Showing the last loaded list.")
       }
     } catch {
       toast.error("Failed to load customer trip inquiries")
@@ -80,8 +86,9 @@ export default function OperatorLeadsPage() {
       const data = await res.json()
       if (data?.success) {
         setVisitorStats({
-          total: data.totalVisits || 1420,
-          today: data.todayVisits || 142,
+          total: Number(data.totalVisits) || 0,
+          today: Number(data.todayVisits) || 0,
+          unique: Number(data.uniqueVisitors) || 0,
           engine: data.storageEngine || "local_disk",
         })
       }
@@ -102,29 +109,36 @@ export default function OperatorLeadsPage() {
   }, [isAuthenticated, fetchLeads, fetchVisitorStats])
 
   // Handle Login Submission
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoginSubmitting(true)
     setLoginError("")
-
-    const cleanUser = loginEmail.trim().toLowerCase()
-    const cleanPass = loginPassword.trim()
-
-    if (cleanUser === AUTHORIZED_USERNAME && cleanPass === AUTHORIZED_PASSWORD) {
-      sessionStorage.setItem("ridevo_operator_auth", "true")
-      setIsAuthenticated(true)
-      toast.success("Welcome, Jagadish! RIDEVO Inquiries Desk unlocked.")
-    } else {
-      setLoginError("Invalid operator credentials. Access restricted to authorized fleet manager.")
-      toast.error("Access denied. Please check username & password.")
+    try {
+      const res = await fetch("/api/operator/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: loginEmail, password: loginPassword }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data?.success) {
+        setOperatorName(loginEmail.trim())
+        setIsAuthenticated(true)
+        setLoginPassword("")
+        toast.success("RIDEVO Inquiries Desk unlocked.")
+      } else {
+        setLoginError(data?.error || "Invalid operator credentials.")
+        toast.error("Access denied. Please check username & password.")
+      }
+    } catch {
+      setLoginError("Could not reach the server. Please try again.")
+    } finally {
+      setLoginSubmitting(false)
     }
-    setLoginSubmitting(false)
   }
 
   // Handle Logout
   const handleLogout = () => {
-    sessionStorage.removeItem("ridevo_operator_auth")
-    sessionStorage.removeItem("nammacab_operator_auth")
+    fetch("/api/operator/login", { method: "DELETE" }).catch(() => {})
     setIsAuthenticated(false)
     setLoginPassword("")
     toast.info("Logged out from Inquiries Desk.")
@@ -132,19 +146,36 @@ export default function OperatorLeadsPage() {
 
   // Update Booking Status
   const updateStatus = async (bookingRef: string, newStatus: string) => {
+    // Show the change straight away; undo it if the server does not confirm it.
+    const previous = leads
+    setLeads((prev) =>
+      prev.map((l) =>
+        l.bookingRef === bookingRef ? { ...l, status: newStatus as StoredTripRequest["status"] } : l
+      )
+    )
     try {
       const res = await fetch("/api/trip-requests", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bookingRef, status: newStatus }),
       })
-      const data = await res.json()
-      if (data.success) {
-        toast.success(`Booking ${bookingRef} marked as ${newStatus.replace("_", " ")}`)
-        fetchLeads()
+      if (res.status === 401) {
+        setLeads(previous)
+        setIsAuthenticated(false)
+        toast.error("Session expired. Please sign in again.")
+        return
+      }
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data?.success && data.booking) {
+        setLeads((prev) => prev.map((l) => (l.bookingRef === bookingRef ? data.booking : l)))
+        toast.success(`Booking ${bookingRef} marked as ${newStatus.replace(/_/g, " ")}`)
+      } else {
+        setLeads(previous)
+        toast.error(data?.error || "Could not update the booking status. Please try again.")
       }
     } catch {
-      toast.error("Failed to update booking status")
+      setLeads(previous)
+      toast.error("Failed to update booking status. Check your internet connection.")
     }
   }
 
@@ -161,7 +192,9 @@ export default function OperatorLeadsPage() {
     const pending = leads.filter((l) => l.status === "pending_confirmation").length
     const confirmed = leads.filter((l) => l.status === "called_confirmed").length
     const allotted = leads.filter((l) => l.status === "driver_allotted").length
-    return { total, pending, confirmed, allotted }
+    const completed = leads.filter((l) => l.status === "completed").length
+    const cancelled = leads.filter((l) => l.status === "cancelled").length
+    return { total, pending, confirmed, allotted, completed, cancelled }
   }, [leads])
 
   // Filtered Leads
@@ -169,7 +202,7 @@ export default function OperatorLeadsPage() {
     return leads.filter((item) => {
       const matchesSearch =
         item.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.customerPhone.includes(searchTerm) ||
+        item.customerPhone.includes(searchTerm.replace(/[\s+-]/g, "").replace(/^91(?=\d{10}$)/, "")) ||
         item.bookingRef.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.destination.toLowerCase().includes(searchTerm.toLowerCase())
 
@@ -213,13 +246,19 @@ export default function OperatorLeadsPage() {
       "Route", "Pickup Address", "Pickup Date", "Pickup Time", "Days",
       "Vehicle", "Rate/KM", "Driver Bata/Day", "Billed KM", "Estimated Fare", "Status", "Notes"
     ]
+    // Quote every text value; neutralise cells that start with = + - @ so Excel never runs them as formulas
+    const cell = (v: unknown) => {
+      let t = String(v ?? "")
+      if (/^[=+\-@]/.test(t)) t = "'" + t
+      return `"${t.replace(/"/g, '""')}"`
+    }
     const rows = leads.map((l) => [
       l.bookingRef,
-      new Date(l.createdAt).toLocaleDateString("en-IN"),
-      `"${l.customerName.replace(/"/g, '""')}"`,
+      new Date(l.createdAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+      l.customerName,
       l.customerPhone,
-      `"${l.source} to ${l.destination}"`,
-      `"${l.pickupAddress.replace(/"/g, '""')}"`,
+      `${l.source} to ${l.destination}`,
+      l.pickupAddress,
       l.pickupDate,
       l.pickupTime,
       l.days,
@@ -228,18 +267,21 @@ export default function OperatorLeadsPage() {
       l.driverBata,
       l.billedKm,
       l.estimatedFare,
-      l.status,
-      `"${(l.notes || "").replace(/"/g, '""')}"`,
+      l.status.replace(/_/g, " "),
+      l.notes || "",
     ])
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
-    const encodedUri = encodeURI(csvContent)
+    const csv = [headers, ...rows].map((r) => r.map(cell).join(",")).join("\r\n")
+    // BOM so Excel shows rupee signs and Kannada names correctly
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
-    link.setAttribute("href", encodedUri)
-    link.setAttribute("download", `ridevo-leads-${new Date().toISOString().split("T")[0]}.csv`)
+    link.href = url
+    link.download = `ridevo-leads-${new Date().toISOString().split("T")[0]}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+    URL.revokeObjectURL(url)
     toast.success("Customer leads exported to CSV!")
   }
 
@@ -364,7 +406,7 @@ export default function OperatorLeadsPage() {
               </Link>
               <span className="text-slate-500">•</span>
               <span className="inline-flex items-center gap-1 text-xs text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-800/40 px-2.5 py-0.5 rounded-full">
-                <UserCheck className="w-3 h-3" /> Logged in: Jagadishbaji@gmail.com
+                <UserCheck className="w-3 h-3" /> Logged in: {operatorName || "Operator"}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
@@ -373,18 +415,20 @@ export default function OperatorLeadsPage() {
             <p className="text-slate-400 text-xs sm:text-sm mt-1 flex items-center gap-2 flex-wrap">
               <span>Live outstation cab bookings saved in database. Auto-refreshes every 15s.</span>
               <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
-                storageEngine === "vercel_kv_upstash"
+                (storageEngine === "supabase" || storageEngine === "vercel_kv_upstash")
                   ? "bg-emerald-950/80 text-emerald-300 border-emerald-700/50"
                   : storageEngine === "local_disk"
                   ? "bg-blue-950/80 text-blue-300 border-blue-700/50"
                   : "bg-amber-950/80 text-amber-300 border-amber-700/50"
               }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${storageEngine === "vercel_kv_upstash" ? "bg-emerald-400" : storageEngine === "local_disk" ? "bg-blue-400" : "bg-amber-400"}`} />
-                {storageEngine === "vercel_kv_upstash"
+                <span className={`w-1.5 h-1.5 rounded-full ${storageEngine === "supabase" || storageEngine === "vercel_kv_upstash" ? "bg-emerald-400" : storageEngine === "local_disk" ? "bg-blue-400" : "bg-amber-400"}`} />
+                {storageEngine === "supabase"
+                  ? "Supabase database: Active"
+                  : storageEngine === "vercel_kv_upstash"
                   ? "Vercel KV Cloud Sync: Active"
                   : storageEngine === "local_disk"
                   ? "Local Disk Storage (data/trip-requests.json)"
-                  : "Serverless Ephemeral Mode"}
+                  : "Temporary storage: bookings can disappear. Connect Supabase"}
               </span>
             </p>
           </div>
@@ -416,11 +460,21 @@ export default function OperatorLeadsPage() {
           </div>
         </div>
 
+        {storageEngine === "vercel_ephemeral" && (
+          <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 text-amber-900 px-4 py-3 text-sm font-semibold">
+            Bookings and visitor counts are NOT being stored permanently right now. Connect a free Upstash Redis
+            database to this Vercel project (Storage tab) so nothing is lost and status changes always stick.
+          </div>
+        )}
+
         {/* Metrics Row */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6">
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
             <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Bookings</div>
             <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-0.5">{metrics.total}</div>
+            <div className="text-[10px] text-slate-400 font-semibold mt-0.5">
+              {metrics.completed} completed · {metrics.cancelled} cancelled
+            </div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
@@ -448,7 +502,7 @@ export default function OperatorLeadsPage() {
               {visitorStats.total.toLocaleString("en-IN")}
             </div>
             <div className="text-[10px] text-slate-400 font-semibold mt-0.5">
-              +{visitorStats.today} visits today
+              visits · {visitorStats.today} today · {visitorStats.unique.toLocaleString("en-IN")} unique
             </div>
           </div>
         </div>
@@ -472,7 +526,8 @@ export default function OperatorLeadsPage() {
               { id: "pending_confirmation", label: `Pending Call (${metrics.pending})` },
               { id: "called_confirmed", label: `Confirmed (${metrics.confirmed})` },
               { id: "driver_allotted", label: `Driver Allotted (${metrics.allotted})` },
-              { id: "completed", label: "Completed" },
+              { id: "completed", label: `Completed (${metrics.completed})` },
+              { id: "cancelled", label: `Cancelled (${metrics.cancelled})` },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -539,7 +594,7 @@ export default function OperatorLeadsPage() {
                           : "bg-slate-100 text-slate-700 border border-slate-200"
                       }`}
                     >
-                      {item.status.replace("_", " ")}
+                      {item.status.replace(/_/g, " ")}
                     </span>
 
                     <span className="text-[11px] text-slate-400 font-medium">

@@ -22,7 +22,8 @@ export function middleware(req: NextRequest) {
     "/forgot-password",
     "/reset-password",
     "/user/vehicles",
-    "/admin/leads",         // ← Allow operator leads dashboard
+    "/admin/leads",         // ← Operator desk (has its own server-side login)
+    "/routes",              // ← Public SEO route pages (Hubli to Goa, Hampi...)
     "/terms",               // ← Added Terms & Conditions
     "/privacy",             // ← Added Privacy Policy
     "/nammacab-banner.mp4", // ← Allow video asset

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import { HomeJsonLd } from "@/components/HomeJsonLd"
 import Image from "next/image"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
@@ -66,8 +67,8 @@ interface PhotonSuggestion {
 // MAIN COMPONENT
 // ═════════════════════════════════════════════════════════════════════════════
 export default function HomePage() {
-  const [todayStr, setTodayStr] = useState("2026-11-08")
-  const [pickupDate, setPickupDate] = useState("2026-11-09")
+  const [todayStr, setTodayStr] = useState("")
+  const [pickupDate, setPickupDate] = useState("")
   const [source, setSource] = useState(DEFAULT_SOURCE)
   const [destination, setDestination] = useState("")
 
@@ -116,28 +117,34 @@ export default function HomePage() {
 
   // ── Accordion FAQ State ──
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0)
-  const [visitorCount, setVisitorCount] = useState<number>(1420)
+  const [visitorCount, setVisitorCount] = useState<number | null>(null)
 
-  // ── Track & Fetch Page Visitors ──
+  // ── Track & Fetch Page Visitors (real numbers; one visit per browser session) ──
   useEffect(() => {
     try {
-      const recorded = sessionStorage.getItem("ridevo_visited_session")
-      if (!recorded) {
-        fetch("/api/visitor-count", { method: "POST" })
-          .then((r) => r.json())
-          .then((d) => {
-            if (d?.totalVisits) setVisitorCount(d.totalVisits)
-          })
-          .catch(() => {})
-        sessionStorage.setItem("ridevo_visited_session", "true")
-      } else {
-        fetch("/api/visitor-count")
-          .then((r) => r.json())
-          .then((d) => {
-            if (d?.totalVisits) setVisitorCount(d.totalVisits)
-          })
-          .catch(() => {})
+      let visitorId = localStorage.getItem("ridevo_visitor_id")
+      if (!visitorId) {
+        visitorId =
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `v-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
+        localStorage.setItem("ridevo_visitor_id", visitorId)
       }
+      const recorded = sessionStorage.getItem("ridevo_visited_session")
+      const request = recorded
+        ? fetch("/api/visitor-count")
+        : fetch("/api/visitor-count", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ visitorId }),
+          })
+      request
+        .then((r) => r.json())
+        .then((d) => {
+          if (typeof d?.uniqueVisitors === "number") setVisitorCount(d.uniqueVisitors)
+          if (!recorded && d?.success) sessionStorage.setItem("ridevo_visited_session", "true")
+        })
+        .catch(() => {})
     } catch {}
   }, [])
 
@@ -399,6 +406,11 @@ export default function HomePage() {
   // ── Construct WhatsApp Deep Link ──
   const generateWhatsAppLink = (car: FleetCarConfig | null) => {
     if (!car) return "#"
+    if (!destination.trim()) {
+      return `https://wa.me/${BOOKING_HELPLINE_PHONE_DIGITS}?text=${encodeURIComponent(
+        `Hello RIDEVO Hubli, I am interested in a ${car.name} for an outstation trip. Please share the fare.`
+      )}`
+    }
     const fare = computeCarFare(car)
     const msg =
       `*🚖 NEW TRIP INQUIRY - RIDEVO HUBLI*\n` +
@@ -424,6 +436,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-green-500 selection:text-white">
+      <HomeJsonLd />
       <Toaster position="top-right" richColors />
       <Navbar />
 
@@ -463,7 +476,11 @@ export default function HomePage() {
                 <span className="text-emerald-500/60 hidden sm:inline">•</span>
                 <span className="text-emerald-300 font-bold flex items-center gap-1">
                   <Users className="w-3.5 h-3.5" />
-                  <span suppressHydrationWarning>{visitorCount.toLocaleString("en-IN")}+ Travelers Visited</span>
+                  <span suppressHydrationWarning>
+                    {visitorCount !== null && visitorCount >= 50
+                      ? `${(Math.floor(visitorCount / 10) * 10).toLocaleString("en-IN")}+ Visitors`
+                      : "Fixed Rates, Zero Advance"}
+                  </span>
                 </span>
               </div>
 
@@ -1302,7 +1319,7 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="mt-5 pt-3 border-t border-slate-200/80 text-[11px] text-green-700 font-semibold flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Logged in project database
+                <CheckCircle2 className="w-3.5 h-3.5" /> Saved with your reference ID
               </div>
             </div>
 
@@ -1858,7 +1875,7 @@ export default function HomePage() {
               </p>
               <div className="flex flex-col gap-2 text-sm">
                 <a
-                  href={`tel:${BOOKING_HELPLINE_PHONE}`}
+                  href={`tel:+${BOOKING_HELPLINE_PHONE_DIGITS}`}
                   className="flex items-center gap-2 hover:text-green-400 transition-colors"
                 >
                   <Phone className="w-4 h-4 text-green-500" />
@@ -1908,7 +1925,7 @@ export default function HomePage() {
               </div>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <a href={`tel:${BOOKING_HELPLINE_PHONE}`} className="hover:text-green-400 transition-colors">
+                  <a href={`tel:+${BOOKING_HELPLINE_PHONE_DIGITS}`} className="hover:text-green-400 transition-colors">
                     24/7 Helpline: {BOOKING_HELPLINE_PHONE}
                   </a>
                 </li>
