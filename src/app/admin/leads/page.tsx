@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback, useMemo } from "react"
+import AdminAlertSetup from "@/components/AdminAlertSetup"
 import Link from "next/link"
 import {
   Phone, MessageCircle, Calendar, Clock, MapPin, Car,
@@ -466,6 +467,8 @@ export default function OperatorLeadsPage() {
             database to this Vercel project (Storage tab) so nothing is lost and status changes always stick.
           </div>
         )}
+
+        <AdminAlertSetup />
 
         {/* Metrics Row */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6">

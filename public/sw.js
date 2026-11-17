@@ -55,6 +55,8 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (url.protocol === 'chrome-extension:') return;
   if (url.pathname.startsWith('/_next/webpack-hmr')) return;
+  // Operator desk and all API calls are private + live: never serve them from cache
+  if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/api/')) return;
 
   // API requests → Network First, fall back to cache
   if (url.href.includes('localhost:5004') || url.href.includes('onrender.com')) {
@@ -130,8 +132,11 @@ async function offlineFallback(request) {
 }
 
 // ── Push Notifications ────────────────────────────────────────────────────────
+// Booking alerts for the operator app. Android honours the vibration pattern.
+const ALERT_VIBRATION = [800, 250, 800, 250, 800, 250, 1500];
+
 self.addEventListener('push', (event) => {
-  let data = { title: 'RIDEVO', body: 'You have a new notification', icon: '/icons/icon-192x192.png' };
+  let data = { title: 'RIDEVO', body: 'You have a new notification', url: '/' };
   try {
     data = { ...data, ...event.data.json() };
   } catch {}
@@ -139,31 +144,31 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: data.icon || '/icons/icon-192x192.png',
+      icon: '/icons/icon-192x192.png',
       badge: '/icons/icon-72x72.png',
-      vibrate: [100, 50, 100],
+      vibrate: Array.isArray(data.vibrate) ? data.vibrate : ALERT_VIBRATION,
+      tag: data.tag || 'ridevo-alert',
+      renotify: true, // vibrate again even if an older alert is still showing
+      requireInteraction: true, // stay on screen until you tap or dismiss it
+      silent: false,
       data: { url: data.url || '/' },
-      actions: [
-        { action: 'view', title: 'View' },
-        { action: 'dismiss', title: 'Dismiss' },
-      ],
+      actions: [{ action: 'open', title: 'Open bookings' }],
     })
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  if (event.action === 'view' || !event.action) {
-    const url = event.notification.data?.url || '/';
-    event.waitUntil(
-      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-        for (const client of clientList) {
-          if (client.url === url && 'focus' in client) return client.focus();
-        }
-        return clients.openWindow(url);
-      })
-    );
-  }
+  const target = new URL(event.notification.data?.url || '/', self.location.origin);
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        const u = new URL(client.url);
+        if (u.origin === target.origin && u.pathname === target.pathname && 'focus' in client) return client.focus();
+      }
+      return clients.openWindow(target.href);
+    })
+  );
 });
 
 // ── Background Sync ───────────────────────────────────────────────────────────

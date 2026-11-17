@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { validateIndianPhone, FLEET_CONFIGS } from "@/lib/fareCalculator"
 import { isOperator } from "@/lib/operatorAuth"
+import { sendBookingPush } from "@/lib/pushAlerts"
 import {
   BOOKING_STATUSES,
   getBooking,
@@ -142,6 +143,8 @@ export async function POST(req: Request) {
     }
 
     await saveBooking(newBooking)
+    // Alert the owner right away (best effort: failures are logged and never block the booking)
+    await sendBookingPush(newBooking)
 
     return NextResponse.json({
       success: true,
