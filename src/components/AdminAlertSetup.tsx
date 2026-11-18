@@ -114,9 +114,7 @@ export default function AdminAlertSetup() {
     try {
       const res = await fetch("/api/operator/push", { method: "PUT" })
       const j = await res.json().catch(() => null)
-      if (res.ok && j?.sent > 0) setNote("Test alert sent. It should reach your phone in a few seconds.")
-      else if (res.ok) setNote("No phone is registered yet. Turn alerts on first.")
-      else setNote(j?.error || "Could not send the test alert.")
+      setNote(j?.message || j?.error || "Could not send the test alert.")
     } catch {
       setNote("Could not send the test alert.")
     } finally {

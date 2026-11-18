@@ -60,11 +60,34 @@ export async function PUT(req: Request) {
   if (!pushConfigured()) {
     return NextResponse.json({ success: false, error: "Phone alerts are not set up on the server yet." }, { status: 503, headers: NO_STORE })
   }
-  const result = await sendPushToOperators({
-    title: "🚖 RIDEVO test alert",
-    body: "If you can feel and hear this, new booking alerts will reach you.",
-    url: "/admin/leads",
-    tag: "ridevo-test",
-  })
-  return NextResponse.json({ success: true, ...result }, { headers: NO_STORE })
+  let result
+  try {
+    result = await sendPushToOperators({
+      title: "🚖 RIDEVO test alert",
+      body: "If you can feel and hear this, new booking alerts will reach you.",
+      url: "/admin/leads",
+      tag: "ridevo-test",
+    })
+  } catch {
+    return NextResponse.json({ success: false, error: "The test alert failed on the server. Please try again." }, { status: 500, headers: NO_STORE })
+  }
+  if (result.error === "VAPID_INVALID") {
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          "The alert keys in Vercel are not valid. Check VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY (copy them exactly, from the same generated pair) and VAPID_SUBJECT (like mailto:support@ridevo.in), then redeploy.",
+      },
+      { status: 500, headers: NO_STORE },
+    )
+  }
+  let message = "Test alert sent. It should reach your phone in a few seconds."
+  if (result.registered === 0) message = "No phone is registered yet. Turn alerts on first."
+  else if (result.sent === 0 && result.failed > 0) {
+    const refused = result.statuses.some((c) => c === 401 || c === 403)
+    message = refused
+      ? "Your phone’s push service refused the alert. Turn alerts OFF and ON again on this phone. If it still fails, check that the two VAPID keys in Vercel are the same generated pair."
+      : "The alert could not be delivered right now. Check your phone’s internet connection and try again."
+  } else if (result.sent === 0 && result.removed > 0) message = "This phone’s registration had expired. Turn alerts ON again."
+  return NextResponse.json({ success: true, ...result, message }, { headers: NO_STORE })
 }

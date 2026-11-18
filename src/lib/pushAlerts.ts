@@ -8,9 +8,20 @@ import type { StoredTripRequest } from "@/lib/bookingStore"
 
 const SB_URL = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/+$/, "")
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || ""
-const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY || ""
-const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY || ""
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:support@ridevo.in"
+// Pasted values often carry quotes, spaces or line breaks: strip them
+const clean = (v: string | undefined) => (v || "").trim().replace(/^["'\s]+|["'\s]+$/g, "")
+const DEFAULT_SUBJECT = "mailto:support@ridevo.in"
+const VAPID_PUBLIC = clean(process.env.VAPID_PUBLIC_KEY)
+const VAPID_PRIVATE = clean(process.env.VAPID_PRIVATE_KEY)
+
+// The subject must be mailto:… or https://… . Fix a bare email address; fall back to the default otherwise.
+export function normalizeSubject(raw: string | undefined): string {
+  const v = clean(raw)
+  if (/^(mailto:[^\s@]+@[^\s@]+|https:\/\/\S+)$/i.test(v)) return v
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return `mailto:${v}`
+  return DEFAULT_SUBJECT
+}
+const VAPID_SUBJECT = normalizeSubject(process.env.VAPID_SUBJECT)
 
 export const SEND_TIMEOUT_MS = 4000
 
@@ -103,12 +114,25 @@ export function buildBookingPush(b: StoredTripRequest): PushPayload {
   }
 }
 
-export type SendResult = { sent: number; removed: number; failed: number }
+export type SendResult = {
+  sent: number
+  removed: number
+  failed: number
+  registered: number // phones registered when the alert was sent
+  statuses: number[] // push-service status codes for failed sends (never contains secrets)
+  error?: "VAPID_INVALID"
+}
 
 export async function sendPushToOperators(payload: PushPayload): Promise<SendResult> {
-  const result: SendResult = { sent: 0, removed: 0, failed: 0 }
+  const result: SendResult = { sent: 0, removed: 0, failed: 0, registered: 0, statuses: [] }
   if (!pushConfigured()) return result
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE)
+  try {
+    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE)
+  } catch (err) {
+    console.error("Push: VAPID settings are invalid:", err instanceof Error ? err.message : "unknown")
+    result.error = "VAPID_INVALID"
+    return result
+  }
   let rows: Row[] = []
   try {
     rows = await sb<Row[]>("push_subscriptions?select=endpoint,p256dh,auth&limit=50")
@@ -116,6 +140,7 @@ export async function sendPushToOperators(payload: PushPayload): Promise<SendRes
     console.error("Push: could not load subscriptions:", err instanceof Error ? err.message : "unknown")
     return result
   }
+  result.registered = rows.length
   const message = JSON.stringify({ ...payload, vibrate: VIBRATION_PATTERN })
   await Promise.all(
     rows.map(async (r) => {
@@ -134,6 +159,7 @@ export async function sendPushToOperators(payload: PushPayload): Promise<SendRes
           await removeSubscription(r.endpoint).catch(() => {})
         } else {
           result.failed++
+          result.statuses.push(status ?? 0)
           console.error("Push send failed, status:", status ?? "network")
         }
       }
@@ -147,6 +173,6 @@ export async function sendBookingPush(b: StoredTripRequest): Promise<SendResult>
     return await sendPushToOperators(buildBookingPush(b))
   } catch (err) {
     console.error("Push alert error:", err instanceof Error ? err.name : "unknown")
-    return { sent: 0, removed: 0, failed: 0 }
+    return { sent: 0, removed: 0, failed: 0, registered: 0, statuses: [] }
   }
 }
