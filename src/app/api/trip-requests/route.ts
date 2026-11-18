@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     // Validation
     if (!customerName || typeof customerName !== "string" || customerName.trim().length < 2) {
       return NextResponse.json(
-        { success: false, error: "Please provide a valid full name (at least 2 characters)" },
+        { success: false, error: "Please enter your full name (at least 2 letters)." },
         { status: 400 }
       )
     }
@@ -69,21 +69,21 @@ export async function POST(req: Request) {
     const phoneValidation = validateIndianPhone(customerPhone)
     if (!phoneValidation.isValid) {
       return NextResponse.json(
-        { success: false, error: phoneValidation.error || "Please provide a valid 10-digit mobile number" },
+        { success: false, error: phoneValidation.error || "Please enter a valid 10-digit mobile number." },
         { status: 400 }
       )
     }
 
     if (!pickupAddress || typeof pickupAddress !== "string" || pickupAddress.trim().length < 3) {
       return NextResponse.json(
-        { success: false, error: "Please provide a valid pickup landmark or address in Hubli" },
+        { success: false, error: "Please tell us your pickup address or a nearby landmark in Hubli, so the driver can find you." },
         { status: 400 }
       )
     }
 
     if (!destination || typeof destination !== "string" || destination.trim().length < 2) {
       return NextResponse.json(
-        { success: false, error: "Please provide a destination city" },
+        { success: false, error: "Please enter where you want to go, for example Goa, Hampi or Gokarna." },
         { status: 400 }
       )
     }
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
     // never trusted from the browser.
     const car = FLEET_CONFIGS.find((c) => c.id === carId)
     if (!car) {
-      return NextResponse.json({ success: false, error: "Unknown car type" }, { status: 400 })
+      return NextResponse.json({ success: false, error: "Please choose a car type and try again." }, { status: 400 })
     }
     const ratePerKm = car.ratePerKm
     const driverBata = car.driverBataPerDay
@@ -148,14 +148,15 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Trip plan received and saved securely in RIDEVO database",
+      message: "Booking request received. We will call you shortly.",
       bookingRef: newBooking.bookingRef,
       booking: newBooking,
     })
   } catch (err: any) {
     console.error("Failed to save trip request:", err)
     return NextResponse.json(
-      { success: false, error: err.message || "Failed to process booking" },
+      // Never show internal details to customers
+      { success: false, error: "We couldn't save your request right now. Please try again in a moment or call us on +91 8884856868." },
       { status: 500 }
     )
   }

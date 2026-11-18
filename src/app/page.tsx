@@ -285,7 +285,7 @@ export default function HomePage() {
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!destination.trim()) {
-      toast.error("Please enter a destination (e.g. Goa, Hampi, Bengaluru, Dandeli, Gokarna)")
+      toast.error("Please enter where you want to go, for example Goa, Hampi, Bengaluru, Dandeli or Gokarna.")
       return
     }
 
@@ -308,7 +308,7 @@ export default function HomePage() {
   // ── Open Booking Modal ──
   const openBookingForCar = (car: FleetCarConfig) => {
     if (!destination.trim()) {
-      toast.error("Please enter your destination first (e.g. Goa, Hampi, Gokarna)")
+      toast.error("Please enter where you want to go first, for example Goa, Hampi or Gokarna.")
       return
     }
     setSelectedCar(car)
@@ -318,29 +318,29 @@ export default function HomePage() {
     setBookingModalOpen(true)
   }
 
-  // ── Submit Booking Lead & Secure In Project Database ──
+  // ── Send the booking request ──
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!customerName.trim() || customerName.trim().length < 2) {
-      toast.error("Please enter your full name")
+      toast.error("Please enter your full name (at least 2 letters).")
       return
     }
 
     const phoneValidation = validateIndianPhone(customerPhone)
     if (!phoneValidation.isValid) {
-      toast.error(phoneValidation.error || "Please enter a valid 10-digit Indian mobile number")
+      toast.error(phoneValidation.error || "Please enter a valid 10-digit mobile number.")
       return
     }
 
     if (!pickupAddress.trim()) {
-      toast.error("Please provide your pickup address / landmark in Hubli")
+      toast.error("Please tell us your pickup address or a nearby landmark in Hubli, so the driver can find you.")
       return
     }
 
     if (!agreedTerms) {
       setTermsError(true)
-      toast.error("Please check the Terms & Conditions box to proceed with booking")
+      toast.error("Please tick the Terms & Conditions box to continue.")
       return
     }
 
@@ -374,23 +374,38 @@ export default function HomePage() {
       status: "pending_confirmation",
     }
 
-    // 1. CRITICAL: Persist to local project database (data/trip-requests.json via /api/trip-requests)
-    // This ensures WE NEVER LOSE A BOOKING even if customer doesn't send WhatsApp!
+    // 1. Send the request to our server. We only show "received" once the server confirms it was saved.
+    const helpline = BOOKING_HELPLINE_PHONE
+    const failMessage = `We couldn't send your request right now. Your details are still here, so please try again in a moment, or call us on ${helpline}.`
     try {
       const apiRes = await fetch("/api/trip-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(leadData),
+        signal: AbortSignal.timeout(30000),
       })
-      const apiData = await apiRes.json()
-      if (apiData?.bookingRef) {
-        setBookingRef(apiData.bookingRef)
+      const apiData = await apiRes.json().catch(() => null)
+      if (!apiRes.ok || !apiData?.success) {
+        // A clear, friendly reason when the server rejected the details; a general message for anything else
+        const rejected = apiRes.status >= 400 && apiRes.status < 500 && typeof apiData?.error === "string"
+        setBookingStep("form")
+        toast.error(rejected ? apiData.error : failMessage, { duration: 8000 })
+        return
       }
+      if (apiData.bookingRef) setBookingRef(apiData.bookingRef)
     } catch (err) {
-      console.warn("API write warning (LocalStorage fallback active):", err)
+      setBookingStep("form")
+      const timedOut = err instanceof DOMException && (err.name === "TimeoutError" || err.name === "AbortError")
+      toast.error(
+        timedOut
+          ? `This is taking longer than usual. Please check your internet connection and try again, or call us on ${helpline}.`
+          : `We couldn't reach our server. Please check your internet connection and try again, or call us on ${helpline}.`,
+        { duration: 8000 },
+      )
+      return
     }
 
-    // 2. Save to customer browser LocalStorage
+    // 2. Keep a copy on the customer's phone (not important if it fails)
     try {
       const existing = JSON.parse(localStorage.getItem("triply_my_trips") || "[]")
       existing.unshift(leadData)
@@ -400,7 +415,7 @@ export default function HomePage() {
     }
 
     setBookingStep("confirmed")
-    toast.success("Trip plan received! Our RIDEVO Hubli Ride Coordinator will call you shortly.")
+    toast.success("Booking request received! Our coordinator will call you shortly.")
   }
 
   // ── Construct WhatsApp Deep Link ──
@@ -1314,8 +1329,8 @@ export default function HomePage() {
                   Instant Trip Ref Code
                 </h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Your trip details are immediately saved into our Hubli database under a unique Reference ID (e.g.{" "}
-                  <code className="text-green-700 font-bold bg-green-50 px-1 rounded">NC-HBX-XXXXXX</code>). Even if you don&apos;t send WhatsApp, your booking is permanently stored!
+                  Your request is registered instantly and you get a booking reference (for example{" "}
+                  <code className="text-green-700 font-bold bg-green-50 px-1 rounded">RV-HBX-123456</code>). Keep it handy when our coordinator calls you.
                 </p>
               </div>
               <div className="mt-5 pt-3 border-t border-slate-200/80 text-[11px] text-green-700 font-semibold flex items-center gap-1">
@@ -1573,7 +1588,13 @@ export default function HomePage() {
                   </h3>
                 </div>
                 <button
-                  onClick={() => setBookingModalOpen(false)}
+                  onClick={() => {
+                    if (bookingStep === "submitting") {
+                      toast.info("Please wait a moment. We are sending your request.")
+                      return
+                    }
+                    setBookingModalOpen(false)
+                  }}
                   className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors text-sm cursor-pointer"
                 >
                   ✕
@@ -1583,7 +1604,7 @@ export default function HomePage() {
               {/* Modal Content */}
               <div className="p-5 sm:p-6">
                 {bookingStep === "form" && (
-                  <form onSubmit={handleBookingSubmit} className="space-y-4">
+                  <form noValidate onSubmit={handleBookingSubmit} className="space-y-4">
                     {/* Trip Summary Chip */}
                     <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs space-y-2">
                       <div className="flex justify-between font-bold text-slate-800">
@@ -1709,7 +1730,7 @@ export default function HomePage() {
                       {termsError && (
                         <p className="text-[11px] text-red-600 font-bold mt-1 flex items-center gap-1 pl-6">
                           <AlertCircle className="w-3.5 h-3.5" />
-                          Please check the box to agree to the Terms &amp; Conditions before requesting a cab.
+                          Please tick this box to agree to the Terms &amp; Conditions and continue.
                         </p>
                       )}
                     </div>
@@ -1726,8 +1747,8 @@ export default function HomePage() {
                 {bookingStep === "submitting" && (
                   <div className="py-14 text-center space-y-4">
                     <RefreshCw className="w-10 h-10 text-green-600 animate-spin mx-auto" />
-                    <h4 className="text-lg font-bold text-slate-900">Saving Trip Plan in Database...</h4>
-                    <p className="text-xs text-slate-500">Connecting with Hubli Ride Coordinator to allot verified car.</p>
+                    <h4 className="text-lg font-bold text-slate-900">Sending your request...</h4>
+                    <p className="text-xs text-slate-500">Please wait a moment and keep this window open. This only takes a few seconds.</p>
                   </div>
                 )}
 
@@ -1744,12 +1765,12 @@ export default function HomePage() {
                     <div>
                       <div className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold px-3 py-0.5 rounded-full mb-1">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        Saved in Hubli Fleet Database
+                        Request received
                       </div>
-                      <h4 className="text-xl font-black text-slate-900">Trip Plan Received!</h4>
+                      <h4 className="text-xl font-black text-slate-900">Booking Request Received!</h4>
                       <p className="text-xs text-slate-600 mt-0.5">
-                        Thank you, <strong>{customerName}</strong>! Your request for{" "}
-                        <strong>{selectedCar.name}</strong> to <strong>{destination}</strong> is secured.
+                        Thank you, <strong>{customerName}</strong>! We have your request for{" "}
+                        <strong>{selectedCar.name}</strong> to <strong>{destination}</strong>. We will call you shortly.
                       </p>
                     </div>
 
@@ -1791,8 +1812,8 @@ export default function HomePage() {
                             ✓
                           </div>
                           <div>
-                            <strong className="text-slate-900">Trip Registered:</strong> Saved under ref{" "}
-                            <span className="font-mono text-green-800 font-bold">{bookingRef}</span> in our project database.
+                            <strong className="text-slate-900">Request Received:</strong> Your booking reference is{" "}
+                            <span className="font-mono text-green-800 font-bold">{bookingRef}</span>. Please keep it handy.
                           </div>
                         </div>
 
@@ -1801,7 +1822,7 @@ export default function HomePage() {
                             2
                           </div>
                           <div>
-                            <strong className="text-slate-900">Cab Allotment:</strong> Our coordinator is matching your trip with verified local {selectedCar.name} owners.
+                            <strong className="text-slate-900">Cab Allotment:</strong> Our coordinator is arranging a verified local {selectedCar.name} for your trip.
                           </div>
                         </div>
 
@@ -1810,7 +1831,7 @@ export default function HomePage() {
                             3
                           </div>
                           <div>
-                            <strong className="text-slate-900">15-Min Phone Call:</strong> Our Hubli coordinator ({BOOKING_HELPLINE_PHONE}) will call your mobile (<strong>+91 {customerPhone}</strong>) to confirm landmark and send driver details.
+                            <strong className="text-slate-900">15-Min Phone Call:</strong> Our Hubli coordinator ({BOOKING_HELPLINE_PHONE}) will call your mobile (<strong>+91 {customerPhone}</strong>) to confirm your pickup point and share the driver details.
                           </div>
                         </div>
 
@@ -1827,21 +1848,10 @@ export default function HomePage() {
 
                     {/* Reassurance Note */}
                     <p className="text-[11px] text-slate-500 leading-snug">
-                      Even if you don&apos;t send WhatsApp, your booking is safely stored. Our coordinator will call you within 15 minutes!
+                      Please keep your phone nearby. Our coordinator will call you within 15 minutes.
                     </p>
 
-                    {/* WhatsApp Fast Confirmation Button & Close */}
                     <div className="space-y-2 pt-1">
-                      <a
-                        href={generateWhatsAppLink(selectedCar)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full h-11 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg transition-colors cursor-pointer"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        Send Booking Details on WhatsApp (Optional)
-                      </a>
-
                       <Button
                         type="button"
                         variant="outline"

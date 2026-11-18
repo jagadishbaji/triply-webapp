@@ -144,7 +144,7 @@ export function validateIndianPhone(input: string): {
   error?: string
 } {
   if (!input || typeof input !== "string") {
-    return { isValid: false, cleanPhone: "", error: "Phone number is required" }
+    return { isValid: false, cleanPhone: "", error: "Please enter your 10-digit mobile number." }
   }
 
   let cleaned = input.replace(/\D/g, "")
@@ -162,7 +162,7 @@ export function validateIndianPhone(input: string): {
     return {
       isValid: false,
       cleanPhone: cleaned,
-      error: "Phone number must be exactly 10 digits",
+      error: "Your mobile number should have 10 digits. Please check it and try again.",
     }
   }
 
@@ -170,7 +170,7 @@ export function validateIndianPhone(input: string): {
     return {
       isValid: false,
       cleanPhone: cleaned,
-      error: "Indian mobile numbers must start with 6, 7, 8, or 9",
+      error: "Please enter a valid Indian mobile number. It should start with 6, 7, 8 or 9.",
     }
   }
 
