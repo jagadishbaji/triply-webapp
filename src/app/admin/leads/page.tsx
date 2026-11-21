@@ -461,6 +461,13 @@ export default function OperatorLeadsPage() {
           </div>
         </div>
 
+        {visitorStats.engine === "vercel_ephemeral" && (
+          <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 text-amber-900 px-4 py-3 text-sm font-semibold">
+            Visitor counts are not being saved permanently right now, so they can show 0. They need the Supabase
+            connection and the visits table to be set up.
+          </div>
+        )}
+
         {storageEngine === "vercel_ephemeral" && (
           <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 text-amber-900 px-4 py-3 text-sm font-semibold">
             Bookings and visitor counts are NOT being stored permanently right now. Connect a free Upstash Redis
