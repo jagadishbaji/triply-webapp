@@ -2,10 +2,15 @@ import fs from "fs/promises"
 import path from "path"
 
 // Visitor statistics.
+//  • Supabase (preferred): every counted visit is one row in `site_visits`; totals come from the
+//    `get_visit_stats` database function. Permanent and shared by every server instance.
 //  • KV (Upstash / Vercel KV): atomic counters, shared by every server instance.
 //  • No KV: JSON file (data/ locally, /tmp on Vercel; /tmp is not permanent).
 // Numbers are REAL: they start at zero (no made-up starting values).
 
+const SB_URL = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/+$/, "")
+const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || ""
+const USE_SUPABASE = Boolean(SB_URL && SB_KEY)
 const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL
 const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN
 const IS_VERCEL = Boolean(process.env.VERCEL)
@@ -40,9 +45,41 @@ export function looksLikeBot(userAgent: string | null): boolean {
   return !userAgent || BOT_PATTERN.test(userAgent)
 }
 
-export function visitStorageEngine(): "vercel_kv_upstash" | "vercel_ephemeral" | "local_disk" {
+export function visitStorageEngine(): "supabase" | "vercel_kv_upstash" | "vercel_ephemeral" | "local_disk" {
+  if (USE_SUPABASE) return "supabase"
   if (KV_URL && KV_TOKEN) return "vercel_kv_upstash"
   return IS_VERCEL ? "vercel_ephemeral" : "local_disk"
+}
+
+// ── Supabase helpers (PostgREST over fetch; server-side only) ────────────────
+async function sb<T = unknown>(pathAndQuery: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${SB_URL}/rest/v1/${pathAndQuery}`, {
+    ...init,
+    cache: "no-store",
+    headers: {
+      apikey: SB_KEY,
+      Authorization: `Bearer ${SB_KEY}`,
+      "Content-Type": "application/json",
+      ...(init.headers || {}),
+    },
+  })
+  const text = await res.text()
+  const data = text ? JSON.parse(text) : null
+  if (!res.ok) throw new Error(`Visit storage error: ${data?.message || res.status}`)
+  return data as T
+}
+
+async function sbStats(day: string): Promise<VisitStats> {
+  const r = await sb<{ total_visits: number; today_visits: number; unique_visitors: number; unique_today: number }>(
+    "rpc/get_visit_stats",
+    { method: "POST", body: JSON.stringify({ p_day: day }) },
+  )
+  return {
+    totalVisits: Number(r?.total_visits) || 0,
+    todayVisits: Number(r?.today_visits) || 0,
+    uniqueVisitors: Number(r?.unique_visitors) || 0,
+    uniqueToday: Number(r?.unique_today) || 0,
+  }
 }
 
 // ── Redis helpers ────────────────────────────────────────────────────────────
@@ -147,6 +184,7 @@ function fileToStats(d: FileData, day: string): VisitStats {
 // ── Public API ───────────────────────────────────────────────────────────────
 export async function getVisitStats(): Promise<VisitStats> {
   const day = istDate()
+  if (USE_SUPABASE) return sbStats(day)
   if (KV_URL && KV_TOKEN) {
     await kvEnsureTotalSeeded()
     return kvStats(day)
@@ -156,6 +194,14 @@ export async function getVisitStats(): Promise<VisitStats> {
 
 export async function recordVisit(visitorId: string): Promise<VisitStats> {
   const day = istDate()
+  if (USE_SUPABASE) {
+    await sb("site_visits", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ visitor_id: visitorId, visit_day: day }),
+    })
+    return sbStats(day)
+  }
   if (KV_URL && KV_TOKEN) {
     await kvEnsureTotalSeeded()
     const dayVisits = `ridevo:visits:day:${day}`
